@@ -1,6 +1,10 @@
 bohr.io CLI
 =================
 
+[![Version](https://img.shields.io/npm/v/bohr.svg)](https://npmjs.org/package/bohr)
+[![Downloads/week](https://img.shields.io/npm/dw/bohr.svg)](https://npmjs.org/package/bohr)
+[![License](https://img.shields.io/npm/l/bohr.svg)](https://npmjs.org/package/bohr)
+
 <!-- toc -->
 * [Usage](#usage)
 * [Commands](#commands)
