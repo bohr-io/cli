@@ -22,7 +22,21 @@
   "dependencies": {
     "@oclif/core": "^1",
     "@oclif/plugin-help": "^5",
-    "@oclif/plugin-plugins": "^2.0.1"
+    "@oclif/plugin-plugins": "^2.0.1",
+    "@netlify/zip-it-and-ship-it": "^4.29.4",
+    "@vercel/fun": "^1.0.3",
+    "axios": "^0.24.0",
+    "chokidar": "^3.5.3",
+    "cross-spawn": "^7.0.3",
+    "dotenv": "^10.0.0",
+    "express": "^4.17.2",
+    "express-logging": "^1.1.1",
+    "get-port": "^6.0.0",
+    "graceful-fs": "^4.2.8",
+    "lodash": "^4.17.21",
+    "miniflare": "^2.0.0-rc.5",
+    "open": "^8.4.0",
+    "wait-port": "^0.2.9"
   },
   "devDependencies": {
     "@oclif/test": "^2",
