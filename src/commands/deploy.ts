@@ -11,7 +11,7 @@ export default class Deploy extends Command {
         const { args, flags } = await this.parse(Deploy)
 
         console.log('bohr.io deploy started...');
-
+        /*
         const axios = require('axios');
         const fs = require('graceful-fs');
         const path = require('path');
@@ -308,17 +308,16 @@ export default class Deploy extends Command {
 
         const getCurrentGit = async function () {
             try {
-                /*
-                var Git = require("nodegit");
-                let repo = await Git.Repository.open("./");
-                let currentBranch = await repo.getCurrentBranch();
-                let currentBranchName = currentBranch.shorthand();
-                let remotes = await repo.getRemotes();
-                return {
-                    REPOSITORY: remotes[0].url().replace('https://github.com/', '').replace('.git', ''),
-                    REF_NAME: currentBranchName
-                };
-                */
+                //var Git = require("nodegit");
+                //let repo = await Git.Repository.open("./");
+                //let currentBranch = await repo.getCurrentBranch();
+                //let currentBranchName = currentBranch.shorthand();
+                //let remotes = await repo.getRemotes();
+                //return {
+                //    REPOSITORY: remotes[0].url().replace('https://github.com/', '').replace('.git', ''),
+                //    REF_NAME: currentBranchName
+                //};
+
                 return {
                     REPOSITORY: 'bohr-io/core',
                     REF_NAME: 'dev'
@@ -409,5 +408,6 @@ export default class Deploy extends Command {
         deployLambda(function () {
             StaticFilesProcess();
         });
+        */
     }
 }
