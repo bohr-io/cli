@@ -74,19 +74,23 @@ export async function getBohrAPI(baseUrl: string, secret: string) {
 }
 
 export async function runInstall(command: string, showOutput: boolean, showError: boolean) {
-    if (process.env.GITHUB_ACTIONS) console.log('::group::Installing dependencies...');
-    warn('RUNNING', 'Installing dependencies - ' + chalk.red(process.env.INSTALL_CMD));
+    if (process.env.GITHUB_ACTIONS) {
+        // @ts-ignore
+        console.log('::group::' + chalk.inverse.bold['yellow'](` RUNNING `) + ' ' + chalk['yellow']('Installing dependencies - ' + chalk.red(process.env.INSTALL_CMD)) + '\n');
+    } else {
+        warn('RUNNING', 'Installing dependencies - ' + chalk.red(process.env.INSTALL_CMD));
+    }
     try {
         await spawnAsync(command, showOutput, showError);
-        info('SUCCESS', 'Dependencies were successfully installed.');
         if (process.env.GITHUB_ACTIONS) console.log('::endgroup::');
+        info('SUCCESS', 'Dependencies were successfully installed.');
     } catch (error: any) {
+        if (process.env.GITHUB_ACTIONS) console.log('::endgroup::');
         console.log('\n\n');
         logError('ERROR', 'An error occurred while installing dependencies.');
         console.log(error.stdout);
         console.log('\n\n');
         console.log(error.stderr);
-        if (process.env.GITHUB_ACTIONS) console.log('::endgroup::');
         process.exit(1);
     }
 }

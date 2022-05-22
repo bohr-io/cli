@@ -27,7 +27,7 @@ export default class Deploy extends Command {
 
         let DEV_MODE = (!pjson.bohrEnv);
 
-        if (DEV_MODE) {
+        if (DEV_MODE || process.env.GITHUB_ACTIONS) {
             flags['show-install'] = true;
             flags['show-build'] = true;
         }
@@ -40,8 +40,6 @@ export default class Deploy extends Command {
         //Optional env
         let STACK = process.env.STACK;
         let BASIC_CREDENTIALS = process.env.BASIC_CREDENTIALS;
-
-        if (process.env.GITHUB_ACTIONS) process.env.FORCE_COLOR = '2';
 
         const MAIN_ENDPOINT = await getMainEndpoint(DEV_MODE);
         let API_ROUTE = MAIN_ENDPOINT + '/api';
@@ -113,19 +111,23 @@ export default class Deploy extends Command {
 
         //Build
         if (process.env.BUILD_CMD && !flags['no-build']) {
-            if (process.env.GITHUB_ACTIONS) console.log('::group::Building your site...');
-            warn('RUNNING', 'Building your site - ' + chalk.yellow(process.env.BUILD_CMD));
+            if (process.env.GITHUB_ACTIONS) {
+                // @ts-ignore
+                console.log('::group::' + chalk.inverse.bold['yellow'](` RUNNING `) + ' ' + chalk['yellow']('Building your site - ' + chalk.red(process.env.BUILD_CMD)) + '\n');
+            } else {
+                warn('RUNNING', 'Building your site - ' + chalk.yellow(process.env.BUILD_CMD));
+            }
             try {
                 await spawnAsync(process.env.BUILD_CMD, flags['show-build'], true);
-                info('SUCCESS', 'Your site has been successfully built.');
                 if (process.env.GITHUB_ACTIONS) console.log('::endgroup::');
+                info('SUCCESS', 'Your site has been successfully built.');
             } catch (error: any) {
+                if (process.env.GITHUB_ACTIONS) console.log('::endgroup::');
                 this.log('\n\n');
                 logError('ERROR', 'An error occurred while building the site.');
                 this.log(error.stdout);
                 this.log('\n\n');
                 this.log(error.stderr);
-                if (process.env.GITHUB_ACTIONS) console.log('::endgroup::');
                 this.exit(1);
             }
         }
@@ -377,7 +379,7 @@ export default class Deploy extends Command {
                             if (process.env.GITHUB_ACTIONS) {
                                 execStr('echo "### bohr deploy! :rocket:" >> $GITHUB_STEP_SUMMARY');
                                 execStr('echo "" >> $GITHUB_STEP_SUMMARY');
-                                execStr('echo "- ' + link('https://' + ret.url) + '" >> $GITHUB_STEP_SUMMARY');
+                                execStr('echo "## https://' + ret.url + '" >> $GITHUB_STEP_SUMMARY');
                             }
                             process.exit(0);
                         });
