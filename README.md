@@ -9,7 +9,6 @@ bohr.io CLI
 * [Usage](#usage)
 * [Commands](#commands)
 <!-- tocstop -->
-
 # Usage
 <!-- usage -->
 ```sh-session
@@ -17,43 +16,60 @@ $ npm install -g bohr
 $ bohr COMMAND
 running command...
 $ bohr (--version)
-bohr/0.0.0 win32-x64 node-v16.13.1
+bohr/1.0.230 win32-x64 node-v16.14.2
 $ bohr --help [COMMAND]
 USAGE
   $ bohr COMMAND
 ...
 ```
 <!-- usagestop -->
-
 # Commands
 <!-- commands -->
-* [`bohr hello PERSON`](#bohr-hello-person)
+* [`bohr deploy`](#bohr-deploy)
+* [`bohr dev`](#bohr-dev)
 * [`bohr help [COMMAND]`](#bohr-help-command)
-* [`bohr world`](#bohr-world)
+* [`bohr login`](#bohr-login)
+* [`bohr logout`](#bohr-logout)
 
-## `bohr hello PERSON`
+## `bohr deploy`
 
-Say hello
+Deploy a site
 
 ```
 USAGE
-  $ bohr hello [PERSON] -f <value>
-
-ARGUMENTS
-  PERSON  Person to say hello to
+  $ bohr deploy [--no-install] [--no-build] [--show-install] [--show-build]
 
 FLAGS
-  -f, --from=<value>  (required) Whom is saying hello
+  --no-build      bypass build command
+  --no-install    bypass install command
+  --show-build    show build command output
+  --show-install  show install command output
 
 DESCRIPTION
-  Say hello
-
-EXAMPLES
-  $ oex hello friend --from oclif
-  hello friend from oclif! (./src/commands/hello/index.ts)
+  Deploy a site
 ```
 
-_See code: [dist/commands/hello.ts](https://github.com/bohr-io/cli/blob/v0.0.0/dist/commands/hello.ts)_
+_See code: [dist/commands/deploy.ts](https://github.com/bohr-io/cli/blob/v1.0.230/dist/commands/deploy.ts)_
+
+## `bohr dev`
+
+Run localhost environment
+
+```
+USAGE
+  $ bohr dev [--no-install] [--no-dev] [--show-install] [--show-dev]
+
+FLAGS
+  --no-dev        bypass dev command
+  --no-install    bypass install command
+  --show-dev      show dev command output
+  --show-install  show install command output
+
+DESCRIPTION
+  Run localhost environment
+```
+
+_See code: [dist/commands/dev.ts](https://github.com/bohr-io/cli/blob/v1.0.230/dist/commands/dev.ts)_
 
 ## `bohr help [COMMAND]`
 
@@ -75,21 +91,31 @@ DESCRIPTION
 
 _See code: [@oclif/plugin-help](https://github.com/oclif/plugin-help/blob/v5.1.12/src/commands/help.ts)_
 
-## `bohr world`
+## `bohr login`
 
-Say hello world
+Login in your bohr.io account
 
 ```
 USAGE
-  $ bohr world
+  $ bohr login
 
 DESCRIPTION
-  Say hello world
-
-EXAMPLES
-  $ oex hello world
-  hello world! (./src/commands/hello/world.ts)
+  Login in your bohr.io account
 ```
 
-_See code: [dist/commands/world.ts](https://github.com/bohr-io/cli/blob/v0.0.0/dist/commands/world.ts)_
+_See code: [dist/commands/login.ts](https://github.com/bohr-io/cli/blob/v1.0.230/dist/commands/login.ts)_
+
+## `bohr logout`
+
+Logout from your bohr.io account
+
+```
+USAGE
+  $ bohr logout
+
+DESCRIPTION
+  Logout from your bohr.io account
+```
+
+_See code: [dist/commands/logout.ts](https://github.com/bohr-io/cli/blob/v1.0.230/dist/commands/logout.ts)_
 <!-- commandsstop -->

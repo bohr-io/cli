@@ -1,6 +1,6 @@
 {
   "name": "bohr",
-  "version": "0.0.0",
+  "version": "1.0.263",
   "description": "The deploy platform for developers.",
   "author": "bohr.io",
   "bin": {
@@ -17,43 +17,47 @@
     "/bin",
     "/dist",
     "/npm-shrinkwrap.json",
-    "/oclif.manifest.json"
+    "/oclif.manifest.json",
+    "/utils"
   ],
   "dependencies": {
+    "@netlify/zip-it-and-ship-it": "^4.29.4",
     "@oclif/core": "^1",
     "@oclif/plugin-help": "^5",
-    "@oclif/plugin-plugins": "^2.0.1",
-    "@netlify/zip-it-and-ship-it": "^4.29.4",
+    "@oclif/plugin-not-found": "^2.3.1",
     "@vercel/fun": "^1.0.3",
     "axios": "^0.24.0",
+    "chalk": "^4.1.2",
     "chokidar": "^3.5.3",
-    "cross-spawn": "^7.0.3",
-    "dotenv": "^10.0.0",
+    "conf": "^10.1.2",
+    "current-git-branch": "^1.1.0",
+    "engine.io-parser": "^5.0.4",
     "express": "^4.17.2",
-    "express-logging": "^1.1.1",
-    "get-port": "^6.0.0",
+    "git-remote-origin-url": "^4.0.0",
     "graceful-fs": "^4.2.8",
     "lodash": "^4.17.21",
-    "miniflare": "^2.0.0-rc.5",
+    "node-fetch": "^3.2.4",
     "open": "^8.4.0",
-    "wait-port": "^0.2.9"
+    "ora": "^5.4.1",
+    "portfinder": "^1.0.28",
+    "supports-color": "^9.2.2",
+    "uuid": "^8.3.2",
+    "wait-port": "^0.2.9",
+    "ws": "^8.6.0"
   },
   "devDependencies": {
     "@oclif/test": "^2",
-    "@types/chai": "^4",
+    "@types/current-git-branch": "^1.1.2",
     "@types/mocha": "^9.0.0",
-    "@types/node": "^7",
-    "@typescript-eslint/eslint-plugin": "^5.20.0",
-    "chai": "^4",
+    "@types/node": "^16",
+    "@types/ws": "^8.5.3",
     "eslint": "^7",
     "eslint-config-oclif": "^4",
     "eslint-config-oclif-typescript": "^1.0.2",
-    "globby": "^11",
     "mocha": "^9",
     "oclif": "^3",
     "shx": "^0.3.3",
     "ts-node": "^10.2.1",
-    "tslib": "^2.3.1",
     "typescript": "^4.4.3"
   },
   "oclif": {
@@ -61,23 +65,24 @@
     "dirname": "bohr",
     "commands": "./dist/commands",
     "plugins": [
-      "@oclif/plugin-help"
+      "@oclif/plugin-help",
+      "@oclif/plugin-not-found"
     ],
     "topicSeparator": " "
   },
   "scripts": {
-    "build": "shx rm -rf dist && tsc -b",
+    "build": "shx rm -rf dist && npx tsc -b && npx oclif manifest && npx oclif readme",
     "lint": "eslint . --ext .ts --config .eslintrc",
     "test": "mocha --forbid-only \"test/**/*.test.ts\"",
-    "postbuild": "oclif readme",
     "posttest": "npm run lint"
   },
   "engines": {
-    "node": ">=12.0.0"
+    "node": ">=16.0.0"
   },
   "bugs": "https://github.com/bohr-io/cli/issues",
   "keywords": [
-    "oclif"
+    "bohr.io",
+    "deploy"
   ],
   "types": "dist/index.d.ts"
 }

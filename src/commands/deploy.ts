@@ -1,46 +1,127 @@
-import { Command, Flags } from '@oclif/core'
+import { Command, Flags } from '@oclif/core';
+import Login from './login';
+import * as chalk from 'chalk';
+import { getCurrentGit, spawnAsync, info, warn, logError, link, loading, runInstall, getMainEndpoint, getBohrAPI } from '../utils';
+const pjson = require('../../package.json');
 
 export default class Deploy extends Command {
-    static description = 'Deploy a site'
+    static description = 'Deploy a site';
 
-    static flags = {}
-
-    static args = []
+    static flags = {
+        'no-install': Flags.boolean({ default: false, description: 'bypass install command' }),
+        'no-build': Flags.boolean({ default: false, description: 'bypass build command' }),
+        'show-install': Flags.boolean({ default: false, description: 'show install command output' }),
+        'show-build': Flags.boolean({ default: false, description: 'show build command output' })
+    };
 
     async run(): Promise<void> {
-        const { args, flags } = await this.parse(Deploy)
+        this.log('');
+        const { flags } = await this.parse(Deploy);
 
-        console.log('bohr.io deploy started...');
-        /*
-        const axios = require('axios');
         const fs = require('graceful-fs');
         const path = require('path');
-        const https = require('https');
         const crypto = require('crypto');
 
-        require('dotenv').config({ path: "bohr.env" });
+        const Conf = require('conf');
+        const config = new Conf();
 
-        //Required env
-        let DEPLOY_PATH = process.env.DEPLOY_PATH != null ? process.env.DEPLOY_PATH : './';
-        let PUBLIC_PATH = process.env.PUBLIC_PATH != null ? process.env.PUBLIC_PATH : DEPLOY_PATH;
-        let DEV_MODE = process.env.DEV_MODE == "1";
-        let BOHR_SECRET = process.env.BOHR_TOKEN;
+        let DEV_MODE = (!pjson.bohrEnv);
+
+        if (DEV_MODE) {
+            flags['show-install'] = true;
+            flags['show-build'] = true;
+        }
 
         let REPO_OWNER: any = null;
         let REPO_NAME: any = null;
-        let REF_TYPE = 1;
+        let REF_TYPE = "BRANCH";
         let REF_NAME: any = null;
 
         //Optional env
         let STACK = process.env.STACK;
         let BASIC_CREDENTIALS = process.env.BASIC_CREDENTIALS;
 
-        //API endpoint
-        const CLI_VERSION = process.env.CLI_VERSION;
-        let API_ROUTE = DEV_MODE ? "https://localhost/api" : "https://bohr.io/api";
-        if (CLI_VERSION != null) {
-            if (CLI_VERSION.split('@')[2] == 'dev') {
-                API_ROUTE = "https://bohr.rocks/api";
+        const MAIN_ENDPOINT = await getMainEndpoint(DEV_MODE);
+        let API_ROUTE = MAIN_ENDPOINT + '/api';
+        let bohrApi = await getBohrAPI(API_ROUTE, config.get('token'));
+
+        let tryAutoLogin = false;
+        const startDeploy = async (): Promise<any> => {
+            let REPOSITORY: any = null;
+            if (process.env.GITHUB_ACTIONS) {
+                REPOSITORY = process.env.GITHUB_REPOSITORY;
+                REF_NAME = process.env.GITHUB_REF_NAME;
+            } else {
+                const git = await getCurrentGit();
+                if (git == null) {
+                    this.error('Git repository not found.');
+                }
+                REPOSITORY = git.REPOSITORY;
+                REF_NAME = git.REF_NAME;
+            }
+            REPO_OWNER = REPOSITORY.split('/')[0];
+            REPO_NAME = REPOSITORY.split('/')[1];
+
+            try {
+                const res = await bohrApi.post('/deploy/start' + ((process.env.GITHUB_ACTIONS) ? '?ga=1' : ''), {
+                    ID_TOKEN: process.env.ID_TOKEN,
+                    GITHUB_TOKEN: process.env.GITHUB_TOKEN,
+                    GITHUB_ACTIONS: process.env.GITHUB_ACTIONS,
+                    REPO_OWNER,
+                    REPO_NAME,
+                    REF_TYPE,
+                    REF_NAME
+                });
+
+                Object.keys(res.data.env).forEach(function (key) { process.env[key] = res.data.env[key]; });
+
+                if (process.env.GITHUB_ACTIONS) {
+                    Object.assign(bohrApi.defaults.headers, {
+                        'Cookie': null,
+                        'Bohr-Auth-Bypass': res.data.token
+                    });
+                }
+            } catch (error: any) {
+                if (error.response) {
+                    if (error.response.status == 401) {
+                        if (DEV_MODE) {
+                            if (!tryAutoLogin) {
+                                tryAutoLogin = true;
+                                loading('DEV_MODE', 'Calling auto login...');
+                                await Login.run();
+                                Object.assign(bohrApi.defaults.headers, { 'Cookie': 'BohrSession=' + config.get('token') });
+                                return await startDeploy();
+                            }
+                        }
+                        this.error('Please, run "login" command first.');
+                    }
+                }
+                this.error(error);
+            }
+        };
+        await startDeploy();
+
+        let DEPLOY_PATH = process.env.DEPLOY_PATH != null ? process.env.DEPLOY_PATH : './';
+        let PUBLIC_PATH = process.env.PUBLIC_PATH != null ? process.env.PUBLIC_PATH : DEPLOY_PATH;
+
+        //Install
+        if (process.env.INSTALL_CMD && !flags['no-install']) {
+            await runInstall(process.env.INSTALL_CMD as string, flags['show-install'], true);
+        }
+
+        //Build
+        if (process.env.BUILD_CMD && !flags['no-build']) {
+            warn('RUNNING', 'Building your site - ' + chalk.yellow(process.env.BUILD_CMD));
+            try {
+                await spawnAsync(process.env.BUILD_CMD, flags['show-build'], true);
+                info('SUCCESS', 'Your site has been successfully built.');
+            } catch (error: any) {
+                this.log('\n\n');
+                logError('ERROR', 'An error occurred while building the site.');
+                this.log(error.stdout);
+                this.log('\n\n');
+                this.log(error.stderr);
+                this.exit(1);
             }
         }
 
@@ -54,22 +135,9 @@ export default class Deploy extends Command {
         //Store hashes via api
         const hashes_on_api = true;
 
-        const bohrApi = axios.create({
-            baseURL: `${API_ROUTE}`,
-            headers: {
-                'Content-Type': 'application/json',
-                'Cookie': 'BohrSession=' + BOHR_SECRET
-            },
-            httpsAgent: new https.Agent({
-                rejectUnauthorized: false
-            }),
-            maxContentLength: Infinity,
-            maxBodyLength: Infinity
-        });
-
-        const hashFile = filePath => new Promise(resolve => {
+        const hashFile = (filePath: any) => new Promise(resolve => {
             const hash = crypto.createHash('sha256');
-            fs.createReadStream(filePath).on('data', data => hash.update(data)).on('end', () => resolve({ file: filePath.replace(PUBLIC_PATH_FULL, '').replace(/\\/g, '/'), hash: hash.digest('hex') }));
+            fs.createReadStream(filePath).on('data', (data: any) => hash.update(data)).on('end', () => resolve({ file: filePath.replace(PUBLIC_PATH_FULL, '').replace(/\\/g, '/'), hash: hash.digest('hex') }));
         });
 
         const walk = function (dir: any, done: any) {
@@ -112,8 +180,7 @@ export default class Deploy extends Command {
             });
         };
 
-        const hashDir = filePath => new Promise(resolve => {
-            console.log('Finding files and hash it...');
+        const hashDir = (filePath: any) => new Promise(resolve => {
             let hashs: any[] = [];
             walk(filePath, function (err: any, results: any) {
                 if (err) throw err;
@@ -128,16 +195,12 @@ export default class Deploy extends Command {
         });
 
         const kvBulk = function (data: any, data_hash: any, cb: any) {
-            bohrApi.put(`/cloudflare/kvBulk`, data, {
-            }).then(res => {
+            bohrApi.put(`/cloudflare/kvBulk`, data).then((res) => {
                 if (res.data.success) {
                     if (hashes_on_api) {
-                        bohrApi.post(`/add_objects`, data_hash, {
-                        }).then(ret => {
-                            if (ret.error) {
-                                console.log(ret.error);
-                            } else {
-                                console.log('Hashes saved with success.');
+                        bohrApi.post(`/add_objects`, data_hash).then((ret) => {
+                            if (ret.data.error) {
+                                console.log(ret.data.error);
                             }
                             cb();
                         })
@@ -149,14 +212,14 @@ export default class Deploy extends Command {
                     console.log(res.data);
                     process.exit(1);
                 }
-            }).catch(error => {
+            }).catch((error: any) => {
                 console.error(error);
                 process.exit(1);
             });
         };
 
         const uploadFiles = function (cb: any) {
-            console.log('Uploading files...');
+            warn('RUNNING', 'Uploading files...');
             let data = [];
             let data_hash = [];
             let data_len = 0;
@@ -181,7 +244,7 @@ export default class Deploy extends Command {
         };
 
         const saveSiteConfig = function (cb: any) {
-            console.log('Saving site config...');
+            warn('RUNNING', 'Deploying your site...');
             let assets: any = {};
             for (let i = 0; i < allHashsManifest.length; i++) {
                 assets[allHashsManifest[i].file] = allHashsManifest[i].hash;
@@ -193,9 +256,9 @@ export default class Deploy extends Command {
                 assets: assets,
             });
             bohrApi.post(`/site/deploy`, { data_value, REF_TYPE, REF_NAME, REPO_OWNER, REPO_NAME }
-            ).then(res => {
+            ).then((res) => {
                 cb(res.data);
-            }).catch(error => {
+            }).catch((error) => {
                 console.error(error);
                 process.exit(1);
             });
@@ -208,14 +271,15 @@ export default class Deploy extends Command {
                 cb_deploy_lambda();
                 return;
             }
-            console.log('Deploying Lambda function...');
+            warn('RUNNING', 'Uploading API function...');
             const { zipFunctions } = require('@netlify/zip-it-and-ship-it');
             async function ZipAndShip() {
                 try {
+                    //return [{ path: 'dist-api\\core.zip' }];
                     const archives = await zipFunctions(API_PATH, './' + DIST_API_PATH);
                     return archives;
                 } catch (e) {
-                    throw e;
+                    console.error(e);
                     process.exit(1);
                 }
             };
@@ -224,28 +288,20 @@ export default class Deploy extends Command {
                     cb_deploy_lambda();
                     return;
                 }
-                hashFile(result[0].path).then(hash => {
-                    console.log('Hash:' + hash.hash);
+                hashFile(result[0].path).then((hash: any) => {
                     lambda_hash = hash.hash
-                    bohrApi.get(`/amazon/getFunctionExists?hash=` + hash.hash).then(response => {
+                    bohrApi.get(`/amazon/getFunctionExists?hash=` + hash.hash).then((response) => {
                         if (response.data.success) {
                             if (response.data.exists) {
-                                console.log('Function already exists.');
                                 cb_deploy_lambda();
                             } else {
-                                console.log('New Function detected.');
                                 bohrApi.post(`/site/deploy-function`, {
                                     "ZIP": fs.readFileSync(result[0].path, { encoding: 'base64' })
-                                }).then(response => {
+                                }).then((response) => {
                                     if (response.status == 200) {
-                                        console.log('deployLambda success');
                                         cb_deploy_lambda();
-                                    } else {
-                                        console.log('deployLambda error');
-                                        console.log(response.data);
-                                        process.exit(1);
                                     }
-                                }).catch(error => {
+                                }).catch((error: any) => {
                                     console.log('deployLambda error');
                                     console.error(error);
                                     process.exit(1);
@@ -256,7 +312,13 @@ export default class Deploy extends Command {
                             console.log(response.data);
                             process.exit(1);
                         }
-                    }).catch(error => {
+                    }).catch((error: any) => {
+                        if (error.response) {
+                            if (error.response.status == 401) {
+                                console.log('Please, run "login" command first.');
+                                process.exit(1);
+                            }
+                        }
                         console.log('getFunctionExists error');
                         console.log(error);
                         process.exit(1);
@@ -270,18 +332,16 @@ export default class Deploy extends Command {
 
         const getMissingFiles = function (cb: any) {
             if (hashes_on_api) {
-                let onlyHashes = allHashs.map(el => el.hash);
+                let onlyHashes = allHashs.map((el: any) => el.hash);
                 bohrApi.post(`/get_missing_objects`, onlyHashes, {
-                }).then(ret => {
-                    if (ret.error) {
-                        console.log(ret.error);
+                }).then((ret) => {
+                    if (ret.data.error) {
+                        console.log(ret.data.error);
                     } else {
                         missingFiles = ret.data;
-                        console.log('Missing files loaded with success.');
-                        console.log('Total: ', missingFiles.length);
                     }
                     cb();
-                }).catch(error => {
+                }).catch((error: any) => {
                     console.error(error);
                     process.exit(1);
                 });
@@ -291,114 +351,20 @@ export default class Deploy extends Command {
         }
 
         const StaticFilesProcess = function () {
-            hashDir(PUBLIC_PATH).then(hashs => {
+            hashDir(PUBLIC_PATH).then((hashs: any) => {
                 allHashs = hashs;
                 allHashsManifest = hashs.slice();
                 getMissingFiles(function () {
                     uploadFiles(function () {
+                        info('SUCCESS', 'Files uploaded successfully.');
                         saveSiteConfig(function (ret: any) {
-                            console.log('finished!');
-                            console.log('https://' + ret.url);
-                            if (DEV_MODE) process.exit(1);
+                            info(' DONE ', 'Site deployed successfully: ' + link('https://' + ret.url));
+                            process.exit(0);
                         });
                     });
                 });
             });
         };
-
-        const getCurrentGit = async function () {
-            try {
-                //var Git = require("nodegit");
-                //let repo = await Git.Repository.open("./");
-                //let currentBranch = await repo.getCurrentBranch();
-                //let currentBranchName = currentBranch.shorthand();
-                //let remotes = await repo.getRemotes();
-                //return {
-                //    REPOSITORY: remotes[0].url().replace('https://github.com/', '').replace('.git', ''),
-                //    REF_NAME: currentBranchName
-                //};
-
-                return {
-                    REPOSITORY: 'bohr-io/core',
-                    REF_NAME: 'dev'
-                };
-            } catch (e) {
-                console.log(e);
-                return null;
-            }
-        };
-
-        const exec = function (cmd: any) {
-            try {
-                const cp = require('child_process');
-                const ret = cp.execSync(cmd, { encoding: 'utf8' });
-                return { success: true, result: ret };
-            } catch (e) {
-                return { success: false, error: e };
-            }
-        };
-
-        const startDeploy = async function () {
-            try {
-                let REPOSITORY: any = null;
-                if (process.env.GITHUB_ACTIONS) {
-                    console.log('GITHUB_ACTIONS detected...');
-                    REPOSITORY = process.env.GITHUB_REPOSITORY;
-                    REF_NAME = process.env.GITHUB_REF_NAME;
-                } else {
-                    const git = await getCurrentGit();
-                    if (git == null) {
-                        console.error('Git repository not found.');
-                        process.exit(1);
-                    }
-                    REPOSITORY = git.REPOSITORY;
-                    REF_NAME = git.REF_NAME;
-                }
-                REPO_OWNER = REPOSITORY.split('/')[0];
-                REPO_NAME = REPOSITORY.split('/')[1];
-
-                const res = await bohrApi.post(`/deploy/start`, {
-                    ID_TOKEN: process.env.ID_TOKEN,
-                    GITHUB_TOKEN: process.env.GITHUB_TOKEN,
-                    GITHUB_ACTIONS: process.env.GITHUB_ACTIONS,
-                    BOHR_TOKEN: process.env.BOHR_TOKEN,
-                    REPO_OWNER,
-                    REPO_NAME,
-                    REF_TYPE,
-                    REF_NAME
-                });
-                process.env = { ...process.env, ...res.data.env };
-
-                let ret = null;
-                if (res.data.cmd_install) {
-                    console.log('Running cmd_install...');
-                    ret = exec(res.data.cmd_install);
-                    if (!ret.success) {
-                        console.log('cmd_install error');
-                        console.error(ret.error);
-                        process.exit(1);
-                    }
-                    console.log(ret.result);
-                }
-
-                if (res.data.cmd_build) {
-                    console.log('Running cmd_build...');
-                    ret = exec(res.data.cmd_build);
-                    if (!ret.success) {
-                        console.log('cmd_build error');
-                        console.error(ret.error);
-                        process.exit(1);
-                    }
-                    console.log(ret.result);
-                }
-
-            } catch (error) {
-                console.error(error);
-                process.exit(1);
-            }
-        };
-
-        await startDeploy();
 
         if (!fs.existsSync(PUBLIC_PATH) || fs.readdirSync(PUBLIC_PATH).length == 0) {
             console.error("Invalid or empty public folder.");
@@ -406,8 +372,8 @@ export default class Deploy extends Command {
         }
 
         deployLambda(function () {
+            info('SUCCESS', 'API function uploaded successfully.');
             StaticFilesProcess();
         });
-        */
     }
 }
