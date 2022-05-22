@@ -41,6 +41,8 @@ export default class Deploy extends Command {
         let STACK = process.env.STACK;
         let BASIC_CREDENTIALS = process.env.BASIC_CREDENTIALS;
 
+        if (process.env.GITHUB_ACTIONS) process.env.FORCE_COLOR = '2';
+
         const MAIN_ENDPOINT = await getMainEndpoint(DEV_MODE);
         let API_ROUTE = MAIN_ENDPOINT + '/api';
         let bohrApi = await getBohrAPI(API_ROUTE, config.get('token'));
@@ -111,16 +113,19 @@ export default class Deploy extends Command {
 
         //Build
         if (process.env.BUILD_CMD && !flags['no-build']) {
+            if (process.env.GITHUB_ACTIONS) console.log('::group::Building your site...');
             warn('RUNNING', 'Building your site - ' + chalk.yellow(process.env.BUILD_CMD));
             try {
                 await spawnAsync(process.env.BUILD_CMD, flags['show-build'], true);
                 info('SUCCESS', 'Your site has been successfully built.');
+                if (process.env.GITHUB_ACTIONS) console.log('::endgroup::');
             } catch (error: any) {
                 this.log('\n\n');
                 logError('ERROR', 'An error occurred while building the site.');
                 this.log(error.stdout);
                 this.log('\n\n');
                 this.log(error.stderr);
+                if (process.env.GITHUB_ACTIONS) console.log('::endgroup::');
                 this.exit(1);
             }
         }
@@ -350,6 +355,16 @@ export default class Deploy extends Command {
             }
         }
 
+        const execStr = function (cmd: string) {
+            try {
+                const cp = require('child_process');
+                const ret = cp.execSync(cmd, { shell: true, encoding: 'utf8' });
+                return { success: true, result: ret };
+            } catch (e) {
+                return { success: false, error: e };
+            }
+        };
+
         const StaticFilesProcess = function () {
             hashDir(PUBLIC_PATH).then((hashs: any) => {
                 allHashs = hashs;
@@ -359,6 +374,11 @@ export default class Deploy extends Command {
                         info('SUCCESS', 'Files uploaded successfully.');
                         saveSiteConfig(function (ret: any) {
                             info(' DONE ', 'Site deployed successfully: ' + link('https://' + ret.url));
+                            if (process.env.GITHUB_ACTIONS) {
+                                execStr('echo "### bohr deploy! :rocket:" >> $GITHUB_STEP_SUMMARY');
+                                execStr('echo "" >> $GITHUB_STEP_SUMMARY');
+                                execStr('echo "- ' + link('https://' + ret.url) + '" >> $GITHUB_STEP_SUMMARY');
+                            }
                             process.exit(0);
                         });
                     });

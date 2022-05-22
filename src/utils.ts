@@ -74,16 +74,19 @@ export async function getBohrAPI(baseUrl: string, secret: string) {
 }
 
 export async function runInstall(command: string, showOutput: boolean, showError: boolean) {
+    if (process.env.GITHUB_ACTIONS) console.log('::group::Installing dependencies...');
     warn('RUNNING', 'Installing dependencies - ' + chalk.red(process.env.INSTALL_CMD));
     try {
         await spawnAsync(command, showOutput, showError);
         info('SUCCESS', 'Dependencies were successfully installed.');
+        if (process.env.GITHUB_ACTIONS) console.log('::endgroup::');
     } catch (error: any) {
         console.log('\n\n');
         logError('ERROR', 'An error occurred while installing dependencies.');
         console.log(error.stdout);
         console.log('\n\n');
         console.log(error.stderr);
+        if (process.env.GITHUB_ACTIONS) console.log('::endgroup::');
         process.exit(1);
     }
 }
@@ -185,7 +188,13 @@ const print = (color: string, label: string, message: string) => {
 export function info(label: string, message: string) { print('green', label, message) };
 export function warn(label: string, message: string) { print('yellow', label, message) };
 export function loading(label: string, message: string) { print('blue', label, message) };
-export function logError(label: string, message: string) { print('red', label, message) };
+export function logError(label: string, message: string) { 
+    if (process.env.GITHUB_ACTIONS) {
+        console.log('::error::' + message);
+    } else {
+        print('red', label, message);
+    }
+};
 export function link(url: string) { return chalk.blue(url) };
 
 export function getFileExtension(path: string) {
