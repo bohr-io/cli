@@ -1,7 +1,9 @@
 import { Command, Flags } from '@oclif/core';
 import Login from './login';
 import * as chalk from 'chalk';
-import { getCurrentGit, spawnAsync, info, warn, logError, link, loading, runInstall, getMainEndpoint, getBohrAPI } from '../utils';
+import { getCurrentGit, spawnAsync, info, warn, logError, link, loading, runInstall, getMainEndpoint, getBohrAPI, b64ToBuf } from '../utils';
+import axios from 'axios';
+
 const pjson = require('../../package.json');
 
 export default class Deploy extends Command {
@@ -297,22 +299,37 @@ export default class Deploy extends Command {
                 }
                 hashFile(result[0].path).then((hash: any) => {
                     lambda_hash = hash.hash
-                    bohrApi.get(`/amazon/getFunctionExists?hash=` + hash.hash).then((response) => {
+                    bohrApi.get(`/amazon/getFunctionExists?hash=` + hash.hash).then(async (response) => {
                         if (response.data.success) {
                             if (response.data.exists) {
                                 cb_deploy_lambda();
                             } else {
-                                bohrApi.post(`/site/deploy-function`, {
-                                    "ZIP": fs.readFileSync(result[0].path, { encoding: 'base64' })
-                                }).then((response) => {
-                                    if (response.status == 200) {
-                                        cb_deploy_lambda();
+                                const uploadToS3 = async function (zipBuf: ArrayBuffer, signedRequest: string) {
+                                    return await axios.put(signedRequest, zipBuf, {
+                                        maxContentLength: Infinity,
+                                        maxBodyLength: Infinity
+                                    });
+                                };
+
+                                try {
+                                    const zipHash: any = await hashFile(result[0].path);
+                                    const ZIP: any = fs.readFileSync(result[0].path, { encoding: 'base64' });
+
+                                    const contentType = 'application/zip';
+                                    const zipBuf = b64ToBuf(ZIP);
+                                    const resGetSignedUrl = await bohrApi.get(`/amazon/getSignedUrl?fileName=${zipHash.hash}&fileType${contentType}`);
+                                    const retUpload = await uploadToS3(zipBuf, resGetSignedUrl.data.signedRequest);
+                                    if (retUpload.status != 200) {
+                                        console.log('deployLambda error');
+                                        console.log('upload error (1)');
+                                        process.exit(1);
                                     }
-                                }).catch((error: any) => {
+                                    cb_deploy_lambda();
+                                } catch (error: any) {
                                     console.log('deployLambda error');
                                     console.error(error);
                                     process.exit(1);
-                                });
+                                }
                             }
                         } else {
                             console.log('getFunctionExists error');
