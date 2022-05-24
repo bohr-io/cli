@@ -117,7 +117,7 @@ export default class Deploy extends Command {
                 // @ts-ignore
                 console.log('::group::' + chalk.inverse.bold['yellow'](` RUNNING `) + ' ' + chalk['yellow']('Building your site - ' + chalk.red(process.env.BUILD_CMD)) + '\n');
             } else {
-                warn('RUNNING', 'Building your site - ' + chalk.yellow(process.env.BUILD_CMD));
+                warn('RUNNING', 'Building your site - ' + chalk.red(process.env.BUILD_CMD));
             }
             try {
                 await spawnAsync(process.env.BUILD_CMD, flags['show-build'], true);

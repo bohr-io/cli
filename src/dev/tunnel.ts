@@ -47,7 +47,7 @@ export class Tunnel extends EventEmitter {
     }
 
     async init() {
-        if (this.opts.devMode) await this.start();
+        if (this.opts.devMode && LOCALHOST) await this.start();
         await this.join();
     }
 
@@ -86,20 +86,6 @@ export class Tunnel extends EventEmitter {
 
     async sendRequest(request: IncomingMessage, bodyBuf: ArrayBufferLike): Promise<any> {
         const ws = this.currentWebSocket;
-        if (request.url == '/api/site/deploy-function') {
-            try {
-                const response = await this.fetch(`http://localhost:${this.port}/api/site/deploy-function`, {
-                    method: request.method,
-                    headers: request.headers,
-                    body: bodyBuf
-                });
-                const body = await response.text();
-                return { status: response.status, headers: response.headers, body };
-            } catch (error) {
-                console.log(error);
-                return { status: 500, headers: [], body: error };
-            }
-        }
         const url = new URL(request.url as string, 'https://' + process.env.BOHR_TUNNEL_URL);
         const body = base64ArrayBuffer(bodyBuf);
         const requestId = uuidv4();
