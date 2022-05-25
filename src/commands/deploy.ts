@@ -38,6 +38,7 @@ export default class Deploy extends Command {
         let REPO_NAME: any = null;
         let REF_TYPE = "BRANCH";
         let REF_NAME: any = null;
+        let deployId: any = null;
 
         //Optional env
         let STACK = process.env.STACK;
@@ -74,6 +75,8 @@ export default class Deploy extends Command {
                     REF_TYPE,
                     REF_NAME
                 });
+
+                deployId = res.data.deployId;
 
                 Object.keys(res.data.env).forEach(function (key) { process.env[key] = res.data.env[key]; });
 
@@ -264,7 +267,7 @@ export default class Deploy extends Command {
                 basic_credentials: BASIC_CREDENTIALS,
                 assets: assets,
             });
-            bohrApi.post(`/site/deploy`, { data_value, REF_TYPE, REF_NAME, REPO_OWNER, REPO_NAME }
+            bohrApi.post(`/site/deploy`, { data_value, deployId, REF_TYPE, REF_NAME, REPO_OWNER, REPO_NAME }
             ).then((res) => {
                 cb(res.data);
             }).catch((error) => {
