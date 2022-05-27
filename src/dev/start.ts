@@ -51,12 +51,19 @@ export class StartDev extends EventEmitter {
                             Object.assign(this.opts.bohrApi.defaults.headers, { 'Cookie': 'BohrSession=' + config.get('token') });
                             return await this.run();
                         }
+                    } else {
+                        console.error('Please, run "login" command first.');
+                        process.exit(1);
                     }
-                    console.error('Please, run "login" command first.');
                 }
             }
             console.error(error);
-            process.exit(1);
+            if (this.opts.devMode) {
+                loading('DEV_MODE', 'Trying load bohr.env...');
+                require('dotenv').config({ path: ".env" });
+            } else {
+                process.exit(1);
+            }
         }
     };
 }
