@@ -210,7 +210,7 @@ export default class Deploy extends Command {
             bohrApi.put(`/cloudflare/kvBulk`, data).then((res) => {
                 if (res.data.success) {
                     if (hashes_on_api) {
-                        bohrApi.post(`/add_objects`, data_hash).then((ret) => {
+                        bohrApi.post(`/deploy/add_objects`, data_hash).then((ret) => {
                             if (ret.data.error) {
                                 console.log(ret.data.error);
                             }
@@ -267,7 +267,7 @@ export default class Deploy extends Command {
                 basic_credentials: BASIC_CREDENTIALS,
                 assets: assets,
             });
-            bohrApi.post(`/site/deploy`, { data_value, deployId, REF_TYPE, REF_NAME, REPO_OWNER, REPO_NAME }
+            bohrApi.post('/deploy/publish', { data_value, deployId, REF_TYPE, REF_NAME, REPO_OWNER, REPO_NAME }
             ).then((res) => {
                 cb(res.data);
             }).catch((error) => {
@@ -305,7 +305,7 @@ export default class Deploy extends Command {
                 }
                 hashFile(result[0].path).then((hash: any) => {
                     lambda_hash = hash.hash
-                    bohrApi.get(`/amazon/getFunctionExists?hash=` + hash.hash).then(async (response) => {
+                    bohrApi.get(`/deploy/getFunctionExists?hash=` + hash.hash).then(async (response) => {
                         if (response.data.success) {
                             if (response.data.exists) {
                                 cb_deploy_lambda();
@@ -323,7 +323,7 @@ export default class Deploy extends Command {
 
                                     const contentType = 'application/zip';
                                     const zipBuf = b64ToBuf(ZIP);
-                                    const resGetSignedUrl = await bohrApi.get(`/amazon/getSignedUrl?fileName=${zipHash.hash}&fileType${contentType}`);
+                                    const resGetSignedUrl = await bohrApi.get(`/deploy/getSignedUrl?fileName=${zipHash.hash}&fileType${contentType}`);
                                     const retUpload = await uploadToS3(zipBuf, resGetSignedUrl.data.signedRequest);
                                     if (retUpload.status != 200) {
                                         console.log('deployLambda error');
@@ -363,7 +363,7 @@ export default class Deploy extends Command {
         const getMissingFiles = function (cb: any) {
             if (hashes_on_api) {
                 let onlyHashes = allHashs.map((el: any) => el.hash);
-                bohrApi.post(`/get_missing_objects`, onlyHashes, {
+                bohrApi.post(`/deploy/get_missing_objects`, onlyHashes, {
                 }).then((ret) => {
                     if (ret.data.error) {
                         console.log(ret.data.error);
