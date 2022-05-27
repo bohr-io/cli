@@ -287,7 +287,10 @@ export default class Deploy extends Command {
             const { zipFunctions } = require('@netlify/zip-it-and-ship-it');
             async function ZipAndShip() {
                 try {
-                    //return [{ path: 'dist-api\\core.zip' }];
+                    if (DEV_MODE && flags['no-install'] && flags['no-build'] && fs.existsSync('dist-api\\core.zip')) {
+                        loading('DEV_MODE', 'Using old "dist-api\\core.zip"...');
+                        return [{ path: 'dist-api\\core.zip' }];
+                    }
                     const archives = await zipFunctions(API_PATH, './' + DIST_API_PATH);
                     return archives;
                 } catch (e) {
