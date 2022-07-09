@@ -4,6 +4,7 @@ import * as WebSocket from 'ws';
 import * as parser from 'engine.io-parser'
 import * as portfinder from 'portfinder';
 import * as chalk from 'chalk';
+import * as https from 'https';
 import { AxiosInstance } from 'axios';
 import { EventEmitter } from 'events';
 import { getFileExtension, base64ArrayBuffer, b64ToBuf, ab2str, spawnAsync, warn, logError } from '../utils'
@@ -37,6 +38,7 @@ export class Tunnel extends EventEmitter {
     pingTimeoutId: any;
     pingTimeout = 0;
     fetch: any;
+    httpsAgent: any;
 
     constructor(opts: TunnelOptions) {
         super();
@@ -80,6 +82,7 @@ export class Tunnel extends EventEmitter {
         this.startTime = Date.now();
 
         if (this.fetch == null) this.fetch = await esloader('node-fetch');
+        if (this.httpsAgent == null) this.httpsAgent = new https.Agent({ rejectUnauthorized: false });
 
         this.bindEventListeners(this.ws);
     }
@@ -282,12 +285,16 @@ export class Tunnel extends EventEmitter {
 
     async processRequest(ws: WebSocket, data: any) {
         const url = new URL(data.request.url);
+        url.protocol = (data.requestType == 'STATIC') ? this.opts.devServer.protocol || 'http' : 'http';
         url.host = ((data.requestType == 'STATIC') ? this.opts.devServer.host : this.opts.functionServer.host) as string;
-        const response = await this.fetch(url.toString(), {
+
+        let fetchOptions: any = {
             method: data.request.method,
             headers: JSON.parse(data.request.headers),
-            body: ['GET', 'HEAD'].indexOf(data.request.method) == -1 ? b64ToBuf(data.request.body) : null
-        });
+            body: ['GET', 'HEAD'].indexOf(data.request.method) == -1 ? b64ToBuf(data.request.body) : null,
+        };
+        if (url.protocol == 'https:') fetchOptions.agent = this.httpsAgent;
+        const response = await this.fetch(url.toString(), fetchOptions);
 
         let isBase64 = false;
         let body = null;

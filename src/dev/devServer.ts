@@ -16,6 +16,7 @@ export class DevServer extends EventEmitter {
     public opts: DevServerOptions;
     public port?: number;
     public host?: string;
+    public protocol?: string;
 
     constructor(opts: DevServerOptions) {
         super();
@@ -53,6 +54,7 @@ export class DevServer extends EventEmitter {
 
         if (this.opts.command == null || this.opts.flags['no-dev']) {
             this.serveStaticFiles(this.port, 'localhost', this.opts.publicPath);
+            this.protocol = 'http';
         } else {
             this.opts.command = this.opts.command.replace('$PORT', this.port.toString());
             warn('RUNNING', 'Starting development server - ' + chalk.red(this.opts.command));
@@ -66,6 +68,7 @@ export class DevServer extends EventEmitter {
             });
             const waitPort = require('wait-port');
             await waitPort({ host: 'localhost', port: this.port, output: 'silent' });
+            this.protocol = 'https'; //TO DO: get from dev server opened
         }
     }
 }
