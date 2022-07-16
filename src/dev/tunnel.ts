@@ -7,7 +7,7 @@ import * as chalk from 'chalk';
 import * as https from 'https';
 import { AxiosInstance } from 'axios';
 import { EventEmitter } from 'events';
-import { getFileExtension, base64ArrayBuffer, b64ToBuf, ab2str, spawnAsync, warn, logError } from '../utils'
+import { getFileExtension, base64ArrayBuffer, b64ToBuf, ab2str, spawnAsync, warn, logError, isBohrPath, getGlobalBohrPath } from '../utils'
 import { IncomingMessage } from 'http';
 import { DevServer } from './devServer.js';
 import { FunctionServer } from './functionServer.js';
@@ -21,7 +21,7 @@ export interface TunnelOptions {
 }
 
 const DEBUG = false;
-const LOCALHOST = false;
+let LOCALHOST = false;
 
 export class Tunnel extends EventEmitter {
     opts: TunnelOptions;
@@ -49,13 +49,15 @@ export class Tunnel extends EventEmitter {
     }
 
     async init() {
+        LOCALHOST = this.opts.bohrApi.defaults.baseURL == 'https://localhost/api';
+        LOCALHOST = true;
         if (this.opts.devMode && LOCALHOST) await this.start();
         await this.join();
     }
 
     async start() {
         this.port = await portfinder.getPortPromise({ port: 8787 });
-        let command = `node saveEnv.js && cd tunnel && npx --yes miniflare --watch --env ../.env --kv-persist ../.bohr/kv --port ${this.port}`;
+        let command = `cd ${getGlobalBohrPath()} ` + (isBohrPath() ? `&& node saveEnv.js ` : '') + `&& cd tunnel && npx --yes miniflare --watch --env ../.env --kv-persist ../.bohr/kv --port ${this.port}`;
         warn('RUNNING', 'Starting edge server - ' + chalk.red(command));
         spawnAsync(command, true, true).catch((error) => {
             console.log('\n\n');

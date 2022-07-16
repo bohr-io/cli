@@ -127,6 +127,32 @@ export async function getCurrentGit() {
     }
 }
 
+export function isBohrPath() {
+    try {
+        const pjson = require(process.cwd() + '/package.json');
+        return (pjson.name == 'bohr-core');
+    } catch (error) {
+        return false;
+    }
+}
+
+export function getGlobalBohrPath() {
+    const npmRootPath = execNpm('npm root -g', true);
+    const globalBohrPath = execNpm('npm list bohr -g --json');
+    return npmRootPath.result.replace(/(\r\n|\n|\r)/gm, "") + '\\' + globalBohrPath.result.dependencies.bohr.resolved.replace('file:', '').replaceAll('/', '\\') + '\\..';
+}
+
+export function execNpm(cmd: string, noParseJson: boolean = false) {
+    let ret = null;
+    try {
+        const cp = require('child_process');
+        ret = cp.execSync(cmd, { encoding: 'utf8' });
+        return { success: true, result: ret != '' && !noParseJson ? JSON.parse(ret) : ret };
+    } catch (e) {
+        return { success: false, error: e, ret };
+    }
+};
+
 type spawnAsyncResult = {
     stdout: string;
     stderr: string;
