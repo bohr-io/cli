@@ -50,7 +50,6 @@ export class Tunnel extends EventEmitter {
 
     async init() {
         LOCALHOST = this.opts.bohrApi.defaults.baseURL == 'https://localhost/api';
-        LOCALHOST = true;
         if (this.opts.devMode && LOCALHOST) await this.start();
         await this.join();
     }
@@ -92,6 +91,7 @@ export class Tunnel extends EventEmitter {
     async sendRequest(request: IncomingMessage, bodyBuf: ArrayBufferLike): Promise<any> {
         const ws = this.currentWebSocket;
         const url = new URL(request.url as string, 'https://' + process.env.BOHR_TUNNEL_URL);
+        if (DEBUG) console.log('CLI - tunnel - sendRequest - ' + url.toString());
         const body = base64ArrayBuffer(bodyBuf);
         const requestId = uuidv4();
         const maxBodyLen = 990000;
@@ -227,6 +227,7 @@ export class Tunnel extends EventEmitter {
             for (let i = 0; i < this.requests.length; i++) {
                 this.sendMessage(ws, this.requests[i]);
             }
+            return;
         }
 
         if (dataPacket.type == 'ping') {
@@ -240,16 +241,21 @@ export class Tunnel extends EventEmitter {
                     this.quit(ws);
                 }, this.pingTimeout);
             }
+            return;
         }
 
         if (dataPacket.type == 'message') {
             this.processMessage(ws, dataPacket.data);
+            return;
         }
 
         if (dataPacket.type == 'close') {
             if (DEBUG) console.log('rcv: close');
             this.quit(ws);
+            return;
         }
+
+        if (DEBUG) console.log('Error, unknow ws packet type.');
     }
 
     processMessage(ws: WebSocket, data: any) {
@@ -283,9 +289,12 @@ export class Tunnel extends EventEmitter {
             this.processResponse(data);
             return;
         }
-    }
 
+        if (DEBUG) console.log('Error, unknow ws message type.');
+    }
+    
     async processRequest(ws: WebSocket, data: any) {
+        if (DEBUG) console.log('CLI - tunnel - processRequest - ' + data.request.url);
         const url = new URL(data.request.url);
         url.protocol = (data.requestType == 'STATIC') ? this.opts.devServer.protocol || 'http' : 'http';
         url.host = ((data.requestType == 'STATIC') ? this.opts.devServer.host : this.opts.functionServer.host) as string;
