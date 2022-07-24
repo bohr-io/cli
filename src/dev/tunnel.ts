@@ -95,7 +95,7 @@ export class Tunnel extends EventEmitter {
         const body = base64ArrayBuffer(bodyBuf);
         const requestId = uuidv4();
         const maxBodyLen = 990000;
-        let result = null;
+        let result: any = null;
         if (body.length > maxBodyLen) {
             let chunksTotal = Math.ceil(body.length / maxBodyLen);
             for (let i = 0; i < body.length; i += maxBodyLen) {
@@ -150,20 +150,27 @@ export class Tunnel extends EventEmitter {
             }
             return { status: 404, headers: {}, body: null };
         } else {
+            if (response.status == 500) {
+                const body = (response.isBase64) ? ab2str(b64ToBuf(response.body)) : response.body as string;
+                if ((body.includes('503 Service Temporarily Unavailable') || body.includes('Subrequest depth limit exceeded'))) {
+                    await this.rejoin(ws);
+                    return await this.sendRequest(request, bodyBuf);
+                }
+            }
             return response;
         }
     };
 
-    quit(ws: WebSocket) {
-        this.rejoin(ws);
+    async quit(ws: WebSocket) {
+        await this.rejoin(ws);
     }
 
-    sendRaw(ws: WebSocket, message: any) {
+    async sendRaw(ws: WebSocket, message: any) {
         if (DEBUG) console.log('snd: ' + message);
         try {
             ws.send(message);
         } catch (err) {
-            this.quit(ws);
+            await this.quit(ws);
         }
     }
 
@@ -176,8 +183,8 @@ export class Tunnel extends EventEmitter {
             type: "message",
             data: JSON.stringify(message),
             options: { compress: true }
-        }, true, encoded => {
-            this.sendRaw(ws, encoded);
+        }, true, async encoded => {
+            await this.sendRaw(ws, encoded);
         });
     }
 
@@ -191,7 +198,7 @@ export class Tunnel extends EventEmitter {
             await new Promise(resolve => setTimeout(resolve, this.rejoinInterval - timeSinceLastJoin));
         }
         this.isRejoing = false;
-        this.join();
+        await this.join();
     }
 
     bindEventListeners(ws: WebSocket) {
@@ -200,29 +207,29 @@ export class Tunnel extends EventEmitter {
 
         ws.addEventListener("message", async msg => {
             try {
-                this.processRawMessage(ws, msg.data);
+                await this.processRawMessage(ws, msg.data);
             } catch (err: any) {
                 console.log(err);
-                this.quit(ws);
+                await this.quit(ws);
             }
         });
 
-        ws.addEventListener("close", event => {
-            this.quit(ws);
+        ws.addEventListener("close", async event => {
+            await this.quit(ws);
         });
 
-        ws.addEventListener("error", event => {
-            this.quit(ws);
+        ws.addEventListener("error", async event => {
+            await this.quit(ws);
         });
     }
 
-    processRawMessage(ws: WebSocket, data: WebSocket.Data) {
+    async processRawMessage(ws: WebSocket, data: WebSocket.Data) {
         const dataPacket = parser.decodePacket(data, "arraybuffer");
 
         if (dataPacket.type == 'open') {
             if (DEBUG) console.log('rcv: open');
-            parser.encodePacket({ type: "open" }, true, encoded => {
-                this.sendRaw(ws, encoded);
+            parser.encodePacket({ type: "open" }, true, async encoded => {
+                await this.sendRaw(ws, encoded);
             });
             for (let i = 0; i < this.requests.length; i++) {
                 this.sendMessage(ws, this.requests[i]);
@@ -232,13 +239,13 @@ export class Tunnel extends EventEmitter {
 
         if (dataPacket.type == 'ping') {
             if (DEBUG) console.log('rcv: ping');
-            parser.encodePacket({ type: "pong" }, true, encoded => {
-                this.sendRaw(ws, encoded);
+            parser.encodePacket({ type: "pong" }, true, async encoded => {
+                await this.sendRaw(ws, encoded);
             });
             clearTimeout(this.pingTimeoutId);
             if (this.pingTimeout != 0) {
-                this.pingTimeoutId = setTimeout(() => {
-                    this.quit(ws);
+                this.pingTimeoutId = setTimeout(async () => {
+                    await this.quit(ws);
                 }, this.pingTimeout);
             }
             return;
@@ -251,14 +258,14 @@ export class Tunnel extends EventEmitter {
 
         if (dataPacket.type == 'close') {
             if (DEBUG) console.log('rcv: close');
-            this.quit(ws);
+            await this.quit(ws);
             return;
         }
 
         if (DEBUG) console.log('Error, unknow ws packet type.');
     }
 
-    processMessage(ws: WebSocket, data: any) {
+    async processMessage(ws: WebSocket, data: any) {
         data = JSON.parse(data);
         if (DEBUG) {
             console.log('processMessage');
@@ -271,7 +278,7 @@ export class Tunnel extends EventEmitter {
                 console.log("ERROR:");
                 console.log(data);
             }
-            this.quit(ws);
+            await this.quit(ws);
             return;
         }
 

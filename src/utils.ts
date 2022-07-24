@@ -110,21 +110,23 @@ export function hideExperimentalWarning() {
 }
 
 export async function getCurrentGit() {
-    try {
-        let origin = await remote.default();
-        if (origin.startsWith('https://github.com/')) {
-            origin = origin.replace('https://github.com/', '').replace('.git', '')
-        } else {
-            return null;
-        }
-        const branchName = CurrentGitBranch();
-        return {
-            REPOSITORY: origin,
-            REF_NAME: branchName
-        };
-    } catch (e) {
-        return null;
-    }
+  try {
+      let origin = await remote.default();
+      if (origin.startsWith('https://github.com/')) {
+          origin = origin.replace('https://github.com/', '').replace('.git', '')
+      } else if(origin.startsWith('git@github.com:')) {
+          origin = origin.replace('git@github.com:', '').replace('.git', '')
+      } else {
+          return null;
+      }
+      const branchName = CurrentGitBranch();
+      return {
+          REPOSITORY: origin,
+          REF_NAME: branchName
+      };
+  } catch (e) {
+      return null;
+  }
 }
 
 export function isBohrPath() {
@@ -218,7 +220,7 @@ const print = (color: string, label: string, message: string) => {
 export function info(label: string, message: string) { print('green', label, message) };
 export function warn(label: string, message: string) { print('yellow', label, message) };
 export function loading(label: string, message: string) { print('blue', label, message) };
-export function logError(label: string, message: string) { 
+export function logError(label: string, message: string) {
     if (process.env.GITHUB_ACTIONS) {
         console.log('::error::' + message);
     } else {

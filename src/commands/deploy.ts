@@ -283,7 +283,7 @@ export default class Deploy extends Command {
                 cb_deploy_lambda();
                 return;
             }
-            warn('RUNNING', 'Uploading API function...');
+            warn('RUNNING', 'Uploading API function....');
             const { zipFunctions } = require('@netlify/zip-it-and-ship-it');
             async function ZipAndShip() {
                 try {
@@ -291,6 +291,18 @@ export default class Deploy extends Command {
                         loading('DEV_MODE', 'Using old "dist-api\\core.zip"...');
                         return [{ path: 'dist-api\\core.zip' }];
                     }
+                    var originalConsoleError = console.error;
+                    //@ts-ignore
+                    process.exit = function processEmit (...args) {
+                        return;
+                    };
+                    console.error = function(...args) {
+                        try {
+                            if (args[0].indexOf('Error: timed out') != -1) return;
+                        } catch (error) {
+                        }
+                        return originalConsoleError.apply(this, args);
+                    };
                     const archives = await zipFunctions(API_PATH, './' + DIST_API_PATH);
                     return archives;
                 } catch (e) {

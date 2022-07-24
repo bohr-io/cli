@@ -38,6 +38,12 @@ export class MainServer extends EventEmitter {
             for await (const chunk of req) buffers.push(chunk);
             const ret = await this.opts.tunnel.sendRequest(req, Buffer.concat(buffers));
             delete ret.headers['connection'];
+            delete ret.headers['content-encoding'];
+            delete ret.headers['x-powered-by'];
+            delete ret.headers['accept-ranges'];
+            delete ret.headers['vary'];
+            delete ret.headers['etag'];
+            delete ret.headers['transfer-encoding'];
             res.writeHead(ret.status, ret.headers);
             res.end(new Uint8Array((ret.isBase64) ? b64ToBuf(ret.body) : ret.body));
         }).listen(this.port, 'localhost');

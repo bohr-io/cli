@@ -28,9 +28,19 @@ export class DevServer extends EventEmitter {
         );
     }
 
-    private serveStaticFiles (port: number, host: string, path: string) {
-        http.createServer(function (req, res) {
-            fs.readFile(path as string + req.url as string, function (error, content) {
+    private getMimeType(ext: string) {
+        const mime: any = { "HTML": 'text/html, charset=utf-8', "SHTM": 'text/html, charset=utf-8', "CSS": 'text/css', "XML": 'text/xml', "GIF": 'image/gif', "JPG": 'image/jpeg', "JPEG": 'image/jpeg', "JS": 'application/x-javascript', "PNG": 'image/png', "TIF": 'image/tiff', "TIFF": 'image/tiff', "ICO": 'image/x-icon', "SVG": 'image/svg+xml', "JSON": 'application/json', "MP4": 'video/mp4', "MOV": 'video/quicktime', "M4V": 'video/x-m4v', "3GP": 'video/3gpp', "WOFF2": 'font/woff2', "WOFF": 'font/woff', "TTF": 'font/ttf' };
+        return mime[ext] != null ? mime[ext] : "text/html, charset=utf-8";
+    }
+
+    private getFileExtension(path: string) {
+        const last_path: any = (path.indexOf('/') != -1) ? path.split('/').pop() : path;
+        return (last_path.indexOf('.') != -1) ? last_path.split('.').pop().toUpperCase() : null;
+    }
+
+    private serveStaticFiles(port: number, host: string, path: string) {
+        http.createServer((req, res) => {
+            fs.readFile(path as string + req.url as string, (error, content) => {
                 if (error) {
                     if (error.code == 'ENOENT') {
                         res.writeHead(404);
@@ -38,10 +48,9 @@ export class DevServer extends EventEmitter {
                     } else {
                         res.writeHead(500);
                         res.end(error.code);
-                        res.end();
                     }
                 } else {
-                    res.writeHead(200);
+                    res.writeHead(200, { "Content-Type": this.getMimeType(this.getFileExtension(req.url as string)) });
                     res.end(content, 'utf-8');
                 }
             });
