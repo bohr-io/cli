@@ -21,6 +21,19 @@ export default class Dev extends Command {
         
         this.log('');
 
+        var originalConsoleError = console.error;
+        //@ts-ignore
+        process.exit = function processEmit (...args) {
+            return;
+        };
+        console.error = function(...args) {
+            try {
+                if (args[0].indexOf('Error: timed out') != -1) return;
+            } catch (error) {
+            }
+            return originalConsoleError.apply(this, args);
+        };
+
         const { flags } = await this.parse(Dev);
         const DEV_MODE = (!pjson.bohrEnv);
         if (DEV_MODE) {

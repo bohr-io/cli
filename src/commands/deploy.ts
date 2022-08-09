@@ -116,11 +116,12 @@ export default class Deploy extends Command {
 
         //Build
         if (process.env.BUILD_CMD && !flags['no-build']) {
+            if (process.env.TURBOREPO_TOKEN) process.env.BUILD_CMD = process.env.BUILD_CMD.replace('#TURBOREPO_TOKEN#', process.env.TURBOREPO_TOKEN);
             if (process.env.GITHUB_ACTIONS) {
                 // @ts-ignore
-                console.log('::group::' + chalk.inverse.bold['yellow'](` RUNNING `) + ' ' + chalk['yellow']('Building your site - ' + chalk.red(process.env.BUILD_CMD)) + '\n');
+                console.log('::group::' + chalk.inverse.bold['yellow'](` RUNNING `) + ' ' + chalk['yellow']('Building your site - ' + chalk.red(process.env.TURBOREPO_TOKEN ? process.env.BUILD_CMD.replace(process.env.TURBOREPO_TOKEN, '***') : process.env.BUILD_CMD)) + '\n');
             } else {
-                warn('RUNNING', 'Building your site - ' + chalk.red(process.env.BUILD_CMD));
+                warn('RUNNING', 'Building your site - ' + chalk.red(process.env.TURBOREPO_TOKEN ? process.env.BUILD_CMD.replace(process.env.TURBOREPO_TOKEN, '***') : process.env.BUILD_CMD));
             }
             try {
                 await spawnAsync(process.env.BUILD_CMD, flags['show-build'], true);
