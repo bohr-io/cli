@@ -70,10 +70,10 @@ export default class Dev extends Command {
         const mainServer = new MainServer({ tunnel });
         mainServer.on('ready', () => {
             this.log('\n');
-            info('READY', 'Server running on ' + link('https://' + mainServer.host as string));
+            info('READY', 'Server running on ' + link('http://' + mainServer.host as string));
             info('READY', 'Tunnel running on ' + link('https://' + process.env.BOHR_TUNNEL_URL));
-            info('READY', 'API running on ' + link('https://' + mainServer.host + '/api'));
-            if (!DEV_MODE) require('open')('https://' + mainServer.host);
+            info('READY', 'API running on ' + link('http://' + mainServer.host + '/api'));
+            if (!DEV_MODE) require('open')('http://' + mainServer.host);
         });
 
         await devServer.run();

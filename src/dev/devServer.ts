@@ -77,7 +77,7 @@ export class DevServer extends EventEmitter {
             });
             const waitPort = require('wait-port');
             await waitPort({ host: 'localhost', port: this.port, output: 'silent' });
-            this.protocol = 'https'; //TO DO: get from dev server opened
+            this.protocol = 'http'; //TO DO: get from dev server opened
         }
     }
 }
