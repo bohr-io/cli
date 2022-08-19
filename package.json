@@ -26,6 +26,7 @@
     "@oclif/plugin-help": "^5",
     "@oclif/plugin-not-found": "^2.3.1",
     "@vercel/fun": "^1.0.3",
+    "@vercel/ncc": "^0.34.0",
     "axios": "^0.24.0",
     "chalk": "^4.1.2",
     "chokidar": "^3.5.3",
@@ -73,10 +74,10 @@
     "topicSeparator": " "
   },
   "scripts": {
-    "build": "shx rm -rf dist && npx tsc -b && npx oclif manifest && npx oclif readme",
-    "lint": "eslint . --ext .ts --config .eslintrc",
-    "test": "mocha --forbid-only \"test/**/*.test.ts\"",
-    "posttest": "yarn run lint"
+    "build-cli": "shx rm -rf dist && npx tsc -b && npx oclif manifest && npx oclif readme && ncc build -m",
+    "lint-cli": "eslint . --ext .ts --config .eslintrc",
+    "test-cli": "mocha --forbid-only \"test/**/*.test.ts\"",
+    "posttest-cli": "yarn run lint"
   },
   "engines": {
     "node": ">=16.0.0"
