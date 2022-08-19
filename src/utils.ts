@@ -27,12 +27,12 @@ export async function getMainEndpoint(DEV_MODE: boolean) {
         const waitPort = require('wait-port');
         let port_open = await waitPort({
             host: 'localhost',
-            port: 443,
+            port: 80,
             timeout: 100,
             output: 'silent'
         });
         if (port_open) {
-            ret = "https://localhost";
+            ret = "http://localhost";
         } else {
             ret = await getApiByEnv(CurrentGitBranch({ altPath: require.main?.path }) as string);
         }
