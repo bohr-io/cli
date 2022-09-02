@@ -49,7 +49,7 @@ export class Tunnel extends EventEmitter {
     }
 
     async init() {
-        LOCALHOST = this.opts.bohrApi.defaults.baseURL == 'https://localhost/api';
+        LOCALHOST = this.opts.bohrApi.defaults.baseURL == 'http://localhost/api';
         if (this.opts.devMode && LOCALHOST) await this.start();
         await this.join();
     }

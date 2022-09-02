@@ -132,7 +132,7 @@ export async function getCurrentGit() {
 export function isBohrPath() {
     try {
         const pjson = require(process.cwd() + '/package.json');
-        return (pjson.name == 'bohr-core');
+        return (pjson.name == 'bohr-core-root');
     } catch (error) {
         return false;
     }
@@ -141,7 +141,8 @@ export function isBohrPath() {
 export function getGlobalBohrPath() {
     const npmRootPath = execNpm('npm root -g', true);
     const globalBohrPath = execNpm('npm list bohr -g --json');
-    return npmRootPath.result.replace(/(\r\n|\n|\r)/gm, "") + '\\' + globalBohrPath.result.dependencies.bohr.resolved.replace('file:', '').replaceAll('/', '\\') + '\\..';
+    //return npmRootPath.result.replace(/(\r\n|\n|\r)/gm, "") + '\\' + globalBohrPath.result.dependencies.bohr.resolved.replace('file:', '').replaceAll('/', '\\') + '\\..';
+    return globalBohrPath.result.dependencies.bohr.resolved.replace('file:', '').replaceAll('/', '\\') + '\\..';
 }
 
 export function execNpm(cmd: string, noParseJson: boolean = false) {
