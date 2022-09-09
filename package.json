@@ -1,6 +1,6 @@
 {
   "name": "bohr",
-  "version": "1.0.300",
+  "version": "1.0.302",
   "description": "The deploy platform for developers.",
   "author": "bohr.io",
   "bin": {
@@ -25,8 +25,8 @@
     "@oclif/core": "^1",
     "@oclif/plugin-help": "^5",
     "@oclif/plugin-not-found": "^2.3.1",
+    "@oclif/plugin-warn-if-update-available": "^2.0.4",
     "@vercel/fun": "^1.0.3",
-    "@vercel/ncc": "^0.34.0",
     "axios": "^0.24.0",
     "chalk": "^4.1.2",
     "chokidar": "^3.5.3",
@@ -69,12 +69,26 @@
     "commands": "./dist/commands",
     "plugins": [
       "@oclif/plugin-help",
-      "@oclif/plugin-not-found"
+      "@oclif/plugin-not-found",
+      "@oclif/plugin-warn-if-update-available"
     ],
-    "topicSeparator": " "
+    "warn-if-update-available": {
+      "timeoutInDays": 7,
+      "message": "<%= config.name %> update available from <%= chalk.greenBright(config.version) %> to <%= chalk.greenBright(latest) %>.\nUpdate through your <%= chalk.blueBright('package manager') %>.\n"
+    },
+    "topicSeparator": " ",
+    "update": {
+      "s3": {
+        "bucket": "bohr-cli",
+        "indexVersionLimit": 20,
+        "acl": "private",
+        "host": "https://bohr-cli-packages.bohr.workers.dev",
+        "xz": true
+      }
+    }
   },
   "scripts": {
-    "build-cli": "shx rm -rf dist && npx tsc -b && npx oclif manifest && npx oclif readme && ncc build -m",
+    "build-cli": "shx rm -rf tmp && rm -rf dist && npx tsc -b && npx oclif manifest && npx oclif readme",
     "lint-cli": "eslint . --ext .ts --config .eslintrc",
     "test-cli": "mocha --forbid-only \"test/**/*.test.ts\"",
     "posttest-cli": "yarn run lint"

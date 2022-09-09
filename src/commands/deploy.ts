@@ -214,7 +214,11 @@ export default class Deploy extends Command {
         bohrApi.put(`/cloudflare/kvBulk`, data).then((res) => {
           if (res.data.success) {
             if (hashes_on_api) {
-              bohrApi.post(`/deploy/add_objects`, data_hash).then((ret) => {
+              let data = {
+                hashList: data_hash,
+                env: (process.env.BOHR_DG_NAME == 'main' ? 'main' : 'dev')
+              };
+              bohrApi.post(`/deploy/add_objects`, data).then((ret) => {
                 if (ret.data.error) {
                   reject(ret.data.error);
                 }
@@ -384,7 +388,11 @@ export default class Deploy extends Command {
       return new Promise(async (resolve, reject) => {
         if (hashes_on_api) {
           let onlyHashes = allHashs.map((el: any) => el.hash);
-          bohrApi.post(`/deploy/get_missing_objects`, onlyHashes, {
+          let data = {
+            hashList: onlyHashes,
+            env: (process.env.BOHR_DG_NAME == 'main' ? 'main' : 'dev')
+          };
+          bohrApi.post(`/deploy/get_missing_objects`, data, {
           }).then((ret) => {
             if (ret.data.error) {
               reject(ret.data.error);
