@@ -8,8 +8,8 @@ if [[ FILE_EXISTS -eq "200" ]]; then
   VERSION=$(curl -s "https://bohr-cli-packages.bohr.workers.dev/channels/$CURRENT_BRANCH_NAME/bohr-linux-x64-buildmanifest" | jq -r '.version')
   HASH=$(curl -s "https://bohr-cli-packages.bohr.workers.dev/channels/$CURRENT_BRANCH_NAME/bohr-linux-x64-buildmanifest" | jq -r '.sha')
 else
-  VERSION=$(curl -s "https://bohr-cli-packages.bohr.workers.dev/channels/stable/bohr-linux-x64-buildmanifest" | jq -r '.version')
-  HASH=$(curl -s "https://bohr-cli-packages.bohr.workers.dev/channels/stable/bohr-linux-x64-buildmanifest" | jq -r '.sha')
+  VERSION=$(curl -s "https://bohr-cli-packages.bohr.workers.dev/channels/main/bohr-linux-x64-buildmanifest" | jq -r '.version')
+  HASH=$(curl -s "https://bohr-cli-packages.bohr.workers.dev/channels/main/bohr-linux-x64-buildmanifest" | jq -r '.sha')
 fi
 
 VERSION_ARR=(${VERSION//-/ })
