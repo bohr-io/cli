@@ -3,6 +3,7 @@ import * as fs from 'fs';
 import * as chokidar from 'chokidar';
 import * as path from 'path';
 import * as portfinder from 'portfinder';
+import * as utils from '../utils';
 import { createFunction } from '@vercel/fun';
 import { EventEmitter } from 'events';
 
@@ -32,16 +33,20 @@ export class FunctionServer extends EventEmitter {
         this.host = 'localhost' + (this.port != 80 ? ':' + this.port : '');
 
         let fn: any = null;
+        const globalBohrPath = utils.execNpm('npm list bohr -g --json');
+        const globalBohrPathResolved = globalBohrPath.result.dependencies.bohr.resolved.replace('file:', '').replaceAll('/', '\\').replace('\\cli', '');
+        const PROJECT_PATH = `${process.cwd()}\\api\\core\\index.js`;
         const createFunctionHandler = async function () {
             fn = await createFunction({
                 Code: {
-                    Directory: './api/core'
+                    Directory: globalBohrPathResolved + '/cli/lambda-layer/bohr-wrapper'
                 },
                 Handler: 'index.handler',
                 Runtime: 'nodejs14.x',
                 Environment: {
                     Variables: {
                         DEV_MODE: true,
+                        PROJECT_PATH: PROJECT_PATH,
                         ...process.env
                     }
                 },
