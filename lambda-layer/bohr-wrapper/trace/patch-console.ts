@@ -5,7 +5,7 @@ import { WebSocket } from "ws";
 import * as parser from 'engine.io-parser'
 
 // const wsUrl = 'wss://bohr.io/bohr_push_log';
-const wsUrl = process.env.DEV_MODE ? 'wss://bohr.rocks/bohr_push_log' : 'wss://bohr.io/bohr_push_log';
+const wsUrl = (process.env.BOHR_REPO_OWNER == 'bohr-io' && process.env.BOHR_REPO_NAME == 'core' && process.env.BOHR_DG_NAME != 'main') ? 'wss://bohr.rocks/bohr_push_log' : 'wss://bohr.io/bohr_push_log';
 
 let ws = new WebSocket(wsUrl);
 let logsQueue: string[] = [];
@@ -21,7 +21,7 @@ ws.addEventListener("open", event => {
       }, true, async (encoded: any) => {
         ws.send(encoded);
         logsQueue = [];
-      });      
+      });
     } catch (error) {
       throw error;
     }
@@ -90,7 +90,7 @@ function patchMethod(mod: Console, method: LogMethod) {
         }
         let messageError = arguments[0].split('\n')[1];
         let logLineNumber = null;
-        if(messageError && arguments[0].includes('Error')){
+        if (messageError && arguments[0].includes('Error')) {
           logLineNumber = messageError.split('api')[1];
         } else {
           let stackEntry = new Error().stack.split('\n')[2];
@@ -115,7 +115,7 @@ function patchMethod(mod: Console, method: LogMethod) {
             }, true, async (encoded: any) => {
               ws.send(encoded);
               logsQueue = [];
-            });                 
+            });
           } catch (error) {
             ws = new WebSocket(wsUrl);
           }

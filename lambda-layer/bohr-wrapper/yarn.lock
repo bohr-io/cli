@@ -29,6 +29,11 @@
   dependencies:
     "@types/node" "*"
 
+engine.io-parser@^5.0.4:
+  version "5.0.4"
+  resolved "http://npm.bohr.io:5000/engine.io-parser/-/engine.io-parser-5.0.4.tgz#0b13f704fa9271b3ec4f33112410d8f3f41d0fc0"
+  integrity sha512-+nVFp+5z1E3HcToEnO7ZIj3g+3k9389DvWtvJZz0T6/eOCPIyyxehFcedoYrZQrp0LgQbD9pPXhpMBKMd5QURg==
+
 serialize-error@^11.0.0:
   version "11.0.0"
   resolved "http://npm.bohr.io:5000/serialize-error/-/serialize-error-11.0.0.tgz#0129f2b07b19b09bc7a5f2d850ffe9cd2d561582"
