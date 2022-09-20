@@ -39,7 +39,8 @@ export class FunctionServer extends EventEmitter {
         const createFunctionHandler = async function () {
             fn = await createFunction({
                 Code: {
-                    Directory: globalBohrPathResolved + '/cli/lambda-layer/bohr-wrapper'
+                    //Directory: globalBohrPathResolved + '/cli/lambda-layer/bohr-wrapper'
+                    Directory: './api/core'
                 },
                 Handler: 'index.handler',
                 Runtime: 'nodejs14.x',

@@ -91,10 +91,10 @@ function patchMethod(mod: Console, method: LogMethod) {
         let messageError = arguments[0].split('\n')[1];
         let logLineNumber = null;
         if (messageError && arguments[0].includes('Error')) {
-          logLineNumber = messageError.split('api')[1];
+          logLineNumber = messageError.split('api\\core\\')[1];
         } else {
           let stackEntry = new Error().stack.split('\n')[2];
-          logLineNumber = stackEntry.split('api')[1];
+          logLineNumber = stackEntry.split('api\\core\\')[1];
         }
 
         logsQueue = [...logsQueue, {
