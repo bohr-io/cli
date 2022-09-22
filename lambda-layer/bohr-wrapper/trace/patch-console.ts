@@ -4,7 +4,7 @@ import { getLogLevel, LogLevel, setLogLevel } from "../utils/log";
 import { WebSocket } from "ws";
 import * as parser from 'engine.io-parser'
 
-// const wsUrl = 'wss://bohr.io/bohr_push_log';
+// const wsUrl = 'ws://localhost:8787/bohr_push_log';
 const wsUrl = (process.env.BOHR_REPO_OWNER == 'bohr-io' && process.env.BOHR_REPO_NAME == 'core' && process.env.BOHR_DG_NAME != 'main') ? 'wss://bohr.rocks/bohr_push_log' : 'wss://bohr.io/bohr_push_log';
 
 let ws = new WebSocket(wsUrl);
@@ -91,10 +91,18 @@ function patchMethod(mod: Console, method: LogMethod) {
         let messageError = arguments[0].split('\n')[1];
         let logLineNumber = null;
         if (messageError && arguments[0].includes('Error')) {
-          logLineNumber = messageError.split('api\\core\\')[1];
+          if (messageError.split('api\\core\\')[1]) {
+            logLineNumber = messageError.split('api\\core\\')[1];
+          } else {
+            logLineNumber = messageError.split('api\/core\/')[1];
+          }
         } else {
           let stackEntry = new Error().stack.split('\n')[2];
-          logLineNumber = stackEntry.split('api\\core\\')[1];
+          if (stackEntry.split('api\\core\\')[1]) {
+            logLineNumber = stackEntry.split('api\\core\\')[1];
+          } else {
+            logLineNumber = stackEntry.split('api\/core\/')[1];
+          }
         }
 
         logsQueue = [...logsQueue, {
