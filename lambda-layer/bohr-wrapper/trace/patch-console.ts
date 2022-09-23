@@ -96,6 +96,7 @@ function patchMethod(mod: Console, method: LogMethod) {
           } else {
             logLineNumber = messageError.split('api\/core\/')[1];
           }
+          logLineNumber = logLineNumber.substring(0, logLineNumber.lastIndexOf(":"));
         } else {
           let stackEntry = new Error().stack.split('\n')[2];
           if (stackEntry.split('api\\core\\')[1]) {
@@ -103,6 +104,7 @@ function patchMethod(mod: Console, method: LogMethod) {
           } else {
             logLineNumber = stackEntry.split('api\/core\/')[1];
           }
+          logLineNumber = logLineNumber.substring(0, logLineNumber.lastIndexOf(":"));
         }
 
         logsQueue = [...logsQueue, {
@@ -112,7 +114,8 @@ function patchMethod(mod: Console, method: LogMethod) {
           BOHR_DG_NAME: process.env.BOHR_DG_NAME,
           LOG_TYPE: 'wrapper',
           CONSOLE_TYPE: method,
-          LINE_NUMBER: logLineNumber
+          LINE_NUMBER: logLineNumber,
+          TIMESTAMP: Date.now()
         }, arguments[0]];
         if (ws.readyState === WebSocket.OPEN) {
           try {
