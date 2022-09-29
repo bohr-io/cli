@@ -91,6 +91,7 @@ export async function runInstall(command: string, showOutput: boolean, showError
         console.log(error.stdout);
         console.log('\n\n');
         console.log(error.stderr);
+
         //@ts-ignore
         originalProcessExit(1);
     }
