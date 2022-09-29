@@ -53,7 +53,8 @@ export class StartDev extends EventEmitter {
                         }
                     } else {
                         console.error('Please, run "login" command first.');
-                        process.exit(1);
+                        //@ts-ignore
+                        originalProcessExit(1);
                     }
                 }
             }
@@ -62,7 +63,8 @@ export class StartDev extends EventEmitter {
                 loading('DEV_MODE', 'Trying load bohr.env...');
                 require('dotenv').config({ path: ".env" });
             } else {
-                process.exit(1);
+                //@ts-ignore
+                originalProcessExit(1);
             }
         }
     };

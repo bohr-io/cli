@@ -17,7 +17,26 @@ export default class Deploy extends Command {
   };
 
   async run(): Promise<void> {
+
     this.log('');
+
+    var originalConsoleError = console.error;
+
+    //@ts-ignore
+    global.originalProcessExit = process.exit;
+
+    //@ts-ignore
+    process.exit = function processEmit(...args) {
+      return;
+    };
+    console.error = function (...args) {
+      try {
+        if (args[0].indexOf('Error: timed out') != -1) return;
+      } catch (error) {
+      }
+      return originalConsoleError.apply(this, args);
+    };
+
     const { flags } = await this.parse(Deploy);
 
     const fs = require('graceful-fs');
@@ -234,7 +253,8 @@ export default class Deploy extends Command {
           }
         }).catch((error: any) => {
           console.error(error);
-          process.exit(1);
+          //@ts-ignore
+          originalProcessExit(1);
         });
       });
     };
@@ -290,7 +310,8 @@ export default class Deploy extends Command {
         cb(res.data);
       }).catch((error) => {
         console.error(error);
-        process.exit(1);
+        //@ts-ignore
+        originalProcessExit(1);
       });
     };
 
@@ -310,23 +331,12 @@ export default class Deploy extends Command {
               loading('DEV_MODE', 'Using old "dist-api\\core.zip"...');
               return [{ path: 'dist-api\\core.zip' }];
             }
-            var originalConsoleError = console.error;
-            //@ts-ignore
-            process.exit = function processEmit(...args) {
-              return;
-            };
-            console.error = function (...args) {
-              try {
-                if (args[0].indexOf('Error: timed out') != -1) return;
-              } catch (error) {
-              }
-              return originalConsoleError.apply(this, args);
-            };
             const archives = await zipFunctions(API_PATH, './' + DIST_API_PATH);
             return archives;
           } catch (e) {
             console.error(e);
-            process.exit(1);
+            //@ts-ignore
+            originalProcessExit(1);
           }
         };
         ZipAndShip().then(result => {
@@ -434,7 +444,8 @@ export default class Deploy extends Command {
 
     if (!fs.existsSync(PUBLIC_PATH) || fs.readdirSync(PUBLIC_PATH).length == 0) {
       console.error("Invalid or empty public folder.");
-      process.exit(1);
+      //@ts-ignore
+      originalProcessExit(1);
     }
 
     Promise.all([deployLambda(), StaticFilesProcess()]).then(function () {
@@ -448,7 +459,8 @@ export default class Deploy extends Command {
       });
     }).catch(function (error) {
       console.log(error);
-      process.exit(1);
+      //@ts-ignore
+      originalProcessExit(1);
     });
   }
 }

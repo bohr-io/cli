@@ -73,7 +73,8 @@ export class DevServer extends EventEmitter {
                 console.log(error.stdout);
                 console.log('\n\n');
                 console.log(error.stderr);
-                process.exit(1);
+                //@ts-ignore
+                originalProcessExit(1);
             });
             const waitPort = require('wait-port');
             await waitPort({ host: 'localhost', port: this.port, output: 'silent' });

@@ -64,7 +64,8 @@ export class Tunnel extends EventEmitter {
             console.log(error.stdout);
             console.log('\n\n');
             console.log(error.stderr);
-            process.exit(1);
+            //@ts-ignore
+            originalProcessExit(1);
         });
         const waitPort = require('wait-port');
         await waitPort({ host: 'localhost', port: this.port, output: 'silent' });
@@ -299,7 +300,7 @@ export class Tunnel extends EventEmitter {
 
         if (DEBUG) console.log('Error, unknow ws message type.');
     }
-    
+
     async processRequest(ws: WebSocket, data: any) {
         if (DEBUG) console.log('CLI - tunnel - processRequest - ' + data.request.url);
         const url = new URL(data.request.url);

@@ -18,15 +18,18 @@ export default class Dev extends Command {
     };
 
     async run(): Promise<void> {
-        
+
         this.log('');
 
         var originalConsoleError = console.error;
         //@ts-ignore
-        process.exit = function processEmit (...args) {
+        global.originalProcessExit = process.exit;
+
+        //@ts-ignore
+        process.exit = function processEmit(...args) {
             return;
         };
-        console.error = function(...args) {
+        console.error = function (...args) {
             try {
                 if (args[0].indexOf('Error: timed out') != -1) return;
             } catch (error) {
@@ -53,7 +56,7 @@ export default class Dev extends Command {
         }
 
         const devServer = new DevServer({
-            command: process.env.DEV_CMD as string, 
+            command: process.env.DEV_CMD as string,
             publicPath: process.env.PUBLIC_PATH as string,
             flags
         });

@@ -2,14 +2,14 @@ import { Command } from '@oclif/core'
 import stream = require('stream');
 import * as http from 'http';
 import * as portfinder from 'portfinder';
-import { info, loading, getMainEndpoint } from '../utils';
+import { info, getMainEndpoint } from '../utils';
 const pjson = require('../../package.json');
 
 export default class Login extends Command {
     static description = 'Login in your bohr.io account'
     async run(): Promise<void> {
         this.log('');
-        
+
         let DEV_MODE = (!pjson.bohrEnv);
 
         const MAIN_ENDPOINT = await getMainEndpoint(DEV_MODE);
