@@ -33,8 +33,13 @@ export class FunctionServer extends EventEmitter {
         this.host = 'localhost' + (this.port != 80 ? ':' + this.port : '');
 
         let fn: any = null;
-        const globalBohrPath = utils.execNpm('npm list bohr -g --json');
-        const globalBohrPathResolved = globalBohrPath.result.dependencies.bohr.resolved.replace('file:', '').replaceAll('/', '\\').replace('\\cli', '');
+        //const globalBohrPath = utils.execNpm('npm list bohr -g --json');
+        //const globalBohrPathResolved = globalBohrPath.result.dependencies.bohr.resolved.replace('file:', '').replaceAll('/', '\\').replace('\\cli', '');
+        /*
+        TO DO: tratar
+            success: false,
+            error: Error: Command failed: npm list bohr -g --json
+        */
         const PROJECT_PATH = `${process.cwd()}\\api\\core\\index.js`;
         const createFunctionHandler = async function () {
             fn = await createFunction({

@@ -232,6 +232,21 @@ export class Tunnel extends EventEmitter {
             parser.encodePacket({ type: "open" }, true, async encoded => {
                 await this.sendRaw(ws, encoded);
             });
+            const tunnelData = {
+                type: 'subscribe',
+                message: {
+                    localhostId: process.env.BOHR_LOCALHOST_ID,
+                    secret: new (require('conf'))().get('token')
+                }
+            };
+            parser.encodePacket({
+                type: "message",
+                data: JSON.stringify(tunnelData),
+                options: { compress: true }
+            }, true, async (encoded: any) => {
+                this.ws?.send(encoded);
+            });
+
             for (let i = 0; i < this.requests.length; i++) {
                 this.sendMessage(ws, this.requests[i]);
             }

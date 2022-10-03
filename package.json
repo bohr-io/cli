@@ -76,16 +76,7 @@
       "timeoutInDays": 7,
       "message": "<%= config.name %> update available from <%= chalk.greenBright(config.version) %> to <%= chalk.greenBright(latest) %>.\nUpdate through your <%= chalk.blueBright('package manager') %>.\n"
     },
-    "topicSeparator": " ",
-    "update": {
-      "s3": {
-        "bucket": "bohr-cli",
-        "indexVersionLimit": 20,
-        "acl": "private",
-        "host": "https://bohr-cli-packages.bohr.workers.dev",
-        "xz": true
-      }
-    }
+    "topicSeparator": " "
   },
   "scripts": {
     "build-cli": "shx rm -rf tmp && rm -rf dist && npx tsc -b && npx oclif manifest && npx oclif readme",

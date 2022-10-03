@@ -29,6 +29,7 @@ export default class Deploy extends Command {
     process.exit = function processEmit(...args) {
       return;
     };
+
     console.error = function (...args) {
       try {
         if (args[0].indexOf('Error: timed out') != -1) return;
