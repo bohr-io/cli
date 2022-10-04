@@ -5,7 +5,6 @@ import { MainServer } from '../dev/mainServer'
 import { Tunnel } from '../dev/tunnel';
 import { StartDev } from '../dev/start';
 import { info, link, getMainEndpoint, runInstall, getBohrAPI } from '../utils';
-import { LocalhostStatus } from '@prisma/client';
 const pjson = require('../../package.json');
 
 export default class Dev extends Command {
@@ -78,7 +77,7 @@ export default class Dev extends Command {
             info('READY', 'Server running on ' + link('http://' + mainServer.host as string));
             info('READY', 'Tunnel running on ' + link('https://' + process.env.BOHR_TUNNEL_URL));
             info('READY', 'API running on ' + link('http://' + mainServer.host + '/api'));
-            bohrApi.put(`/site/localhost`, {id: process.env.BOHR_LOCALHOST_ID, status: LocalhostStatus.RUNNING});
+            bohrApi.put(`/site/localhost`, {id: process.env.BOHR_LOCALHOST_ID, status: "RUNNING"});
             if (!DEV_MODE) require('open')('http://' + mainServer.host);
         });
 
@@ -89,7 +88,7 @@ export default class Dev extends Command {
 
         
         process.on('SIGINT', async function () {
-            await bohrApi.put(`/site/localhost`, {id: process.env.BOHR_LOCALHOST_ID, status: LocalhostStatus.CLOSED});
+            await bohrApi.put(`/site/localhost`, {id: process.env.BOHR_LOCALHOST_ID, status: "CLOSED"});
             originalExit(0);
         });
     }
