@@ -77,7 +77,11 @@ export default class Dev extends Command {
             info('READY', 'Server running on ' + link('http://' + mainServer.host as string));
             info('READY', 'Tunnel running on ' + link('https://' + process.env.BOHR_TUNNEL_URL));
             info('READY', 'API running on ' + link('http://' + mainServer.host + '/api'));
-            bohrApi.put(`/site/localhost`, {id: process.env.BOHR_LOCALHOST_ID, status: "RUNNING"});
+            try {
+                bohrApi.put(`/site/localhost`, {id: process.env.BOHR_LOCALHOST_ID, status: "RUNNING"});
+            } catch (error) {
+                console.error(error);
+            }
             if (!DEV_MODE) require('open')('http://' + mainServer.host);
         });
 
@@ -88,7 +92,12 @@ export default class Dev extends Command {
 
         
         process.on('SIGINT', async function () {
-            await bohrApi.put(`/site/localhost`, {id: process.env.BOHR_LOCALHOST_ID, status: "CLOSED"});
+            try {
+                await bohrApi.put(`/site/localhost`, {id: process.env.BOHR_LOCALHOST_ID, status: "CLOSED"});
+            } catch (error) {
+                console.error(error);
+            }            
+            
             originalExit(0);
         });
     }
