@@ -239,13 +239,8 @@ export class Tunnel extends EventEmitter {
                     secret: new (require('conf'))().get('token')
                 }
             };
-            parser.encodePacket({
-                type: "message",
-                data: JSON.stringify(tunnelData),
-                options: { compress: true }
-            }, true, async (encoded: any) => {
-                this.ws?.send(encoded);
-            });
+
+            await this.sendMessage(ws, tunnelData)
 
             for (let i = 0; i < this.requests.length; i++) {
                 this.sendMessage(ws, this.requests[i]);
