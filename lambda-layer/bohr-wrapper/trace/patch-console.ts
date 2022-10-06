@@ -88,24 +88,9 @@ function patchMethod(mod: Console, method: LogMethod) {
           if (typeof logContent !== "string") logContent = inspect(logContent);
           arguments[0] = `${prefix}${logContent}`;
         }
-        let messageError = arguments[0].split('\n')[1];
-        let logLineNumber = null;
-        if (messageError && arguments[0].includes('Error')) {
-          if (messageError.split('api\\core\\')[1]) {
-            logLineNumber = messageError.split('api\\core\\')[1];
-          } else {
-            logLineNumber = messageError.split('api\/core\/')[1];
-          }
-          logLineNumber = logLineNumber.substring(0, logLineNumber.lastIndexOf(":"));
-        } else {
-          let stackEntry = new Error().stack.split('\n')[2];
-          if (stackEntry.split('api\\core\\')[1]) {
-            logLineNumber = stackEntry.split('api\\core\\')[1];
-          } else {
-            logLineNumber = stackEntry.split('api\/core\/')[1];
-          }
-          logLineNumber = logLineNumber.substring(0, logLineNumber.lastIndexOf(":"));
-        }
+
+        let logArguments: any = getArguments(arguments);
+        let logLineNumber = getLineNumber(arguments);
 
         logsQueue = [...logsQueue, {
           BOHR_REPO_OWNER: process.env.BOHR_REPO_OWNER,
@@ -116,7 +101,7 @@ function patchMethod(mod: Console, method: LogMethod) {
           CONSOLE_TYPE: method,
           LINE_NUMBER: logLineNumber,
           TIMESTAMP: Date.now()
-        }, arguments[0]];
+        }, logArguments];
         if (ws.readyState === WebSocket.OPEN) {
           try {
             parser.encodePacket({
@@ -142,6 +127,43 @@ function patchMethod(mod: Console, method: LogMethod) {
       return original.apply(this as any, arguments as any);
     };
   });
+}
+
+function getArguments(args: any) {
+  let multipleArguments: any;
+  if (args.length > 1) {
+    multipleArguments = Object.values(args).join(', ');
+  } else {
+    multipleArguments = args[0];
+  }
+  return multipleArguments;
+}
+
+function getLineNumber(args: any) {
+  let messageError = args[0].split('\n')[1];
+  let logLineNumber = null;  
+  try {
+    if (messageError && args[0].includes('Error')) {
+      if (messageError.split('api\\core\\')[1]) {
+        logLineNumber = messageError.split('api\\core\\')[1];
+      } else {
+        logLineNumber = messageError.split('api\/core\/')[1];
+      }
+      logLineNumber = logLineNumber.substring(0, logLineNumber.lastIndexOf(":"));
+    } else {
+      let stackEntry = new Error().stack.split('\n')[3];
+      if (stackEntry.split('api\\core\\')[1]) {
+        logLineNumber = stackEntry.split('api\\core\\')[1];
+      } else {
+        logLineNumber = stackEntry.split('api\/core\/')[1];
+      }
+      logLineNumber = logLineNumber.substring(0, logLineNumber.lastIndexOf(":"));
+    }  
+  } catch (error) {
+    console.log(error);
+    return;
+  }
+  return logLineNumber;
 }
 
 function unpatchMethod(mod: Console, method: LogMethod) {
