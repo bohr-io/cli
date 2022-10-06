@@ -78,7 +78,11 @@ export default class Dev extends Command {
             info('READY', 'Tunnel running on ' + link('https://' + process.env.BOHR_TUNNEL_URL));
             info('READY', 'API running on ' + link('http://' + mainServer.host + '/api'));
             try {
-                bohrApi.put(`/site/localhost`, {id: process.env.BOHR_LOCALHOST_ID, status: "RUNNING"});
+                if(process.env.BOHR_LOCALHOST_ID){
+                    bohrApi.put(`/dev/localhost`, {id: process.env.BOHR_LOCALHOST_ID, status: "RUNNING"});
+                } else {
+                    console.error("Unable to update localhost Status - missing localHostId.");
+                }                
             } catch (error) {
                 console.error(error);
             }
@@ -93,7 +97,11 @@ export default class Dev extends Command {
         
         process.on('SIGINT', async function () {
             try {
-                await bohrApi.put(`/site/localhost`, {id: process.env.BOHR_LOCALHOST_ID, status: "CLOSED"});
+                if(process.env.BOHR_LOCALHOST_ID){
+                    await bohrApi.put(`/dev/localhost`, {id: process.env.BOHR_LOCALHOST_ID, status: "CLOSED"});
+                } else {
+                    console.error("Unable to update localhost Status - missing localHostId.");
+                }
             } catch (error) {
                 console.error(error);
             }            

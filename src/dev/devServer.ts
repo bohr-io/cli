@@ -40,7 +40,8 @@ export class DevServer extends EventEmitter {
 
     private serveStaticFiles(port: number, host: string, path: string) {
         http.createServer((req, res) => {
-            fs.readFile(path as string + req.url as string, (error, content) => {
+            let filePath = req.url?.endsWith('/') ? req.url + 'index.html' : req.url;
+            fs.readFile(path as string + filePath as string, (error, content) => {
                 if (error) {
                     if (error.code == 'ENOENT') {
                         res.writeHead(404);
@@ -50,7 +51,7 @@ export class DevServer extends EventEmitter {
                         res.end(error.code);
                     }
                 } else {
-                    res.writeHead(200, { "Content-Type": this.getMimeType(this.getFileExtension(req.url as string)) });
+                    res.writeHead(200, { "Content-Type": this.getMimeType(this.getFileExtension(filePath as string)) });
                     res.end(content, 'utf-8');
                 }
             });
