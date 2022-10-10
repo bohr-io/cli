@@ -80,9 +80,7 @@ export default class Dev extends Command {
             try {
                 if(process.env.BOHR_LOCALHOST_ID){
                     bohrApi.put(`/dev/localhost`, {id: process.env.BOHR_LOCALHOST_ID, status: "RUNNING"});
-                } else {
-                    console.error("Unable to update localhost Status - missing localHostId.");
-                }                
+                }               
             } catch (error) {
                 console.error(error);
             }
@@ -99,8 +97,6 @@ export default class Dev extends Command {
             try {
                 if(process.env.BOHR_LOCALHOST_ID){
                     await bohrApi.put(`/dev/localhost`, {id: process.env.BOHR_LOCALHOST_ID, status: "CLOSED"});
-                } else {
-                    console.error("Unable to update localhost Status - missing localHostId.");
                 }
             } catch (error) {
                 console.error(error);
