@@ -39,7 +39,7 @@ export default class Dev extends Command {
         };
 
         const { flags } = await this.parse(Dev);
-        const DEV_MODE = (!pjson.bohrEnv);
+        const DEV_MODE = (!pjson.bohrEnv) && (!process.env.GITHUB_ACTIONS);
         if (DEV_MODE) {
             flags['show-install'] = true;
             flags['show-dev'] = true;

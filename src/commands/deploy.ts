@@ -47,7 +47,7 @@ export default class Deploy extends Command {
     const Conf = require('conf');
     const config = new Conf();
 
-    let DEV_MODE = (!pjson.bohrEnv);
+    let DEV_MODE = (!pjson.bohrEnv) && (!process.env.GITHUB_ACTIONS);
 
     if (DEV_MODE || process.env.GITHUB_ACTIONS) {
       flags['show-install'] = true;

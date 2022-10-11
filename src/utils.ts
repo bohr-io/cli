@@ -43,9 +43,14 @@ export async function getMainEndpoint(DEV_MODE: boolean) {
         }
         loading('DEV_MODE', 'Using API at: ' + chalk.red(ret));
     } else {
-        if (pjson.bohrEnv != 'main') {
-            ret = await getApiByEnv(pjson.bohrEnv);
+        if (process.env.GITHUB_ACTIONS) {
+            ret = await getApiByEnv(process.env.GITHUB_REF_NAME as string);
             loading('CHANGE', 'Using API at: ' + chalk.red(ret));
+        } else {
+            if (pjson.bohrEnv != 'main') {
+                ret = await getApiByEnv(pjson.bohrEnv);
+                loading('CHANGE', 'Using API at: ' + chalk.red(ret));
+            }
         }
     }
     return ret;
