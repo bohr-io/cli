@@ -12,12 +12,16 @@ const pjson = require('../package.json');
 export const PROD_URL = "https://bohr.io";
 
 const getApiByEnv = async function (env: string) {
-    const fetch = await esloader('node-fetch');
-    const response = await fetch(PROD_URL + '/api/api?env=' + env);
-    const body = await response.json();
-    if (body.found) {
-        return 'https://' + body.url;
-    } else {
+    try {
+        const fetch = await esloader('node-fetch');
+        const response = await fetch(PROD_URL + '/api/api?env=' + env);
+        const body = await response.json();
+        if (body.found) {
+            return 'https://' + body.url;
+        } else {
+            return PROD_URL;
+        }
+    } catch (error) {
         return PROD_URL;
     }
 }

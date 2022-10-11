@@ -79,7 +79,7 @@ export default class Dev extends Command {
             info('READY', 'API running on ' + link('http://' + mainServer.host + '/api'));
             try {
                 if(process.env.BOHR_LOCALHOST_ID){
-                    //bohrApi.put(`/dev/localhost`, {id: process.env.BOHR_LOCALHOST_ID, status: "RUNNING"});
+                    bohrApi.put(`/dev/localhost`, {id: process.env.BOHR_LOCALHOST_ID, status: "RUNNING"});
                 }               
             } catch (error) {
                 console.error(error);
