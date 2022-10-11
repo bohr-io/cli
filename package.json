@@ -21,7 +21,7 @@
     "/utils"
   ],
   "dependencies": {
-    "@netlify/zip-it-and-ship-it": "^5.13.1",
+    "@netlify/zip-it-and-ship-it": "^7.1.2",
     "@oclif/core": "^1",
     "@oclif/plugin-help": "^5",
     "@oclif/plugin-not-found": "^2.3.1",
