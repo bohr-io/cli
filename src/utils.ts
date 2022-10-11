@@ -40,6 +40,7 @@ export async function getMainEndpoint(DEV_MODE: boolean) {
     } else {
         if (pjson.bohrEnv != 'main') {
             ret = await getApiByEnv(pjson.bohrEnv);
+            loading('CHANGE', 'Using API at: ' + chalk.red(ret));
         }
     }
     return ret;
