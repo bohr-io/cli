@@ -3,7 +3,7 @@ import Login from './login';
 import * as chalk from 'chalk';
 import { getCurrentGit, spawnAsync, info, warn, logError, link, loading, runInstall, getMainEndpoint, getBohrAPI, b64ToBuf } from '../utils';
 import axios from 'axios';
-
+ 
 const pjson = require('../../package.json');
 
 export default class Deploy extends Command {

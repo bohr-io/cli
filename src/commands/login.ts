@@ -2,7 +2,7 @@ import { Command } from '@oclif/core'
 import stream = require('stream');
 import * as http from 'http';
 import * as portfinder from 'portfinder';
-import { info, getMainEndpoint } from '../utils';
+import { info, getMainEndpoint, getBohrAPI, logError, checkBohrAPIStatus, PROD_URL } from '../utils';
 const pjson = require('../../package.json');
 
 export default class Login extends Command {
@@ -12,7 +12,12 @@ export default class Login extends Command {
 
         let DEV_MODE = (!pjson.bohrEnv);
 
-        const MAIN_ENDPOINT = await getMainEndpoint(DEV_MODE);
+        let MAIN_ENDPOINT = await getMainEndpoint(DEV_MODE);
+
+        if (!await checkBohrAPIStatus(MAIN_ENDPOINT + '/api')) {
+            logError('ERROR', 'API error, trying use production API...');
+            MAIN_ENDPOINT = PROD_URL;
+        }
 
         const TEMP_PORT = await portfinder.getPortPromise({ port: 8796 });
         const login_url = MAIN_ENDPOINT + '/login-cli?port=' + TEMP_PORT;

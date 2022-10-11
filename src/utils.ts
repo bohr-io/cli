@@ -8,7 +8,8 @@ import * as chalk from 'chalk';
 import * as https from 'https';
 import axios from 'axios';
 const pjson = require('../package.json');
-const PROD_URL = "https://bohr.io";
+
+export const PROD_URL = "https://bohr.io";
 
 const getApiByEnv = async function (env: string) {
     const fetch = await esloader('node-fetch');
@@ -46,7 +47,7 @@ export async function getMainEndpoint(DEV_MODE: boolean) {
     return ret;
 }
 
-async function checkBohrAPIStatus(baseUrl: string) {
+export async function checkBohrAPIStatus(baseUrl: string) {
     try {
         const body: any = await axios.get(baseUrl + '/api/status', { httpsAgent: new https.Agent({ rejectUnauthorized: false }) });
         return body.data.bohr_api;
