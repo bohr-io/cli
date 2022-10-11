@@ -68,6 +68,8 @@ export default class Deploy extends Command {
     let API_ROUTE = MAIN_ENDPOINT + '/api';
     let bohrApi = await getBohrAPI(API_ROUTE, config.get('token'));
 
+    warn('WELCOME', 'Let\'s deploy it!...');
+
     let tryAutoLogin = false;
     const startDeploy = async (): Promise<any> => {
       let REPOSITORY: any = null;
