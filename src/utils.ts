@@ -45,7 +45,7 @@ export async function getMainEndpoint(DEV_MODE: boolean) {
     }
     loading("DEV_MODE", "Using API at: " + chalk.red(ret));
   } else {
-    if (process.env.GITHUB_ACTIONS) {
+    if (process.env.GITHUB_ACTIONS && process.env.GITHUB_REPOSITORY === "bohr.io/core") {
       ret = await getApiByEnv(process.env.GITHUB_REF_NAME as string);
       loading("CHANGE", "Using API at: " + chalk.red(ret));
     } else {

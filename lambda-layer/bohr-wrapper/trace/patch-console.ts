@@ -140,30 +140,34 @@ function getArguments(args: any) {
 }
 
 function getLineNumber(args: any) {
-  let messageError = args[0].split('\n')[1];
-  let logLineNumber = null;  
+  let logLineNumber = null;
+
   try {
-    if (messageError && args[0].includes('Error')) {
-      if (messageError.split('api\\core\\')[1]) {
-        logLineNumber = messageError.split('api\\core\\')[1];
-      } else {
-        logLineNumber = messageError.split('api\/core\/')[1];
-      }
-      logLineNumber = logLineNumber.substring(0, logLineNumber.lastIndexOf(":"));
+    let messageError = getErrorStack(args);
+    if (messageError.split('api\\core\\')) {
+      logLineNumber = messageError.split('api\\core\\')[1];
     } else {
-      let stackEntry = new Error().stack.split('\n')[3];
-      if (stackEntry.split('api\\core\\')[1]) {
-        logLineNumber = stackEntry.split('api\\core\\')[1];
-      } else {
-        logLineNumber = stackEntry.split('api\/core\/')[1];
-      }
-      logLineNumber = logLineNumber.substring(0, logLineNumber.lastIndexOf(":"));
-    }  
+      logLineNumber = messageError.split('api\/core\/')[1];
+    }
+    logLineNumber = logLineNumber.substring(0, logLineNumber.lastIndexOf(":"));
   } catch (error) {
     console.log(error);
     return;
   }
   return logLineNumber;
+}
+
+function getErrorStack(args: any) {
+  let argsErrorStack = args[0].split('\n')
+  let errorStack = argsErrorStack.find((errorLine: any) => {
+    return errorLine.includes('api\\core\\') || errorLine.includes('api\/core\/');
+  });
+  if ((!errorStack || !args[0].includes('Error'))) {
+    errorStack = new Error().stack.split('\n').find((errorLine: any) => {
+      return errorLine.includes('api\\core\\') || errorLine.includes('api\/core\/');
+    });
+  }
+  return errorStack;
 }
 
 function unpatchMethod(mod: Console, method: LogMethod) {
