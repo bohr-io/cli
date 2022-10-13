@@ -263,10 +263,11 @@ export function spawnAsync(
 }
 
 const print = (color: string, label: string, message: string) => {
-  // @ts-ignore
   console.log(
+    // @ts-ignore
     chalk.inverse.bold[color](` ${label} `),
     " ",
+    // @ts-ignore
     chalk[color](message),
     "\n"
   );
