@@ -144,29 +144,31 @@ function getLineNumber(args: any) {
 
   try {
     let messageError = getErrorStack(args);
-    if (messageError.split('api\\core\\')) {
+    if (messageError.includes('api\\core\\')) {
       logLineNumber = messageError.split('api\\core\\')[1];
     } else {
-      logLineNumber = messageError.split('api\/core\/')[1];
+      logLineNumber = messageError.split('api/core/')[1];
     }
-    logLineNumber = logLineNumber.substring(0, logLineNumber.lastIndexOf(":"));
+    if(logLineNumber){
+      logLineNumber = logLineNumber.substring(0, logLineNumber.lastIndexOf(":"));
+    }
+    return logLineNumber;
   } catch (error) {
     console.log(error);
     return;
   }
-  return logLineNumber;
 }
 
 function getErrorStack(args: any) {
   let argsErrorStack = args[0].split('\n')
   let errorStack = argsErrorStack.find((errorLine: any) => {
-    return errorLine.includes('api\\core\\') || errorLine.includes('api\/core\/');
+    return errorLine.includes('api\\core\\') || errorLine.includes('api/core/');
   });
   if ((!errorStack || !args[0].includes('Error'))) {
     errorStack = new Error().stack.split('\n').find((errorLine: any) => {
-      return errorLine.includes('api\\core\\') || errorLine.includes('api\/core\/');
+      return errorLine.includes('api\\core\\') || errorLine.includes('api/core/');
     });
-  }
+  } 
   return errorStack;
 }
 
