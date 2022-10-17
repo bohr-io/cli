@@ -3,7 +3,7 @@ import Login from './login';
 import * as chalk from 'chalk';
 import { getCurrentGit, spawnAsync, info, warn, logError, link, loading, runInstall, getMainEndpoint, getBohrAPI, b64ToBuf } from '../utils';
 import axios from 'axios';
- 
+
 const pjson = require('../../package.json');
 
 export default class Deploy extends Command {
@@ -172,8 +172,20 @@ export default class Deploy extends Command {
 
     const hashFile = (filePath: any) => new Promise(resolve => {
       const hash = crypto.createHash('sha256');
-      fs.createReadStream(filePath).on('data', (data: any) => hash.update(data)).on('end', () => resolve({ file: filePath.replace(PUBLIC_PATH_FULL, '').replace(/\\/g, '/'), hash: hash.digest('hex') }));
+      const file = fs.createReadStream(filePath);
+
+      file.on('data', (data: any) => {
+        hash.update(data);
+      });
+
+      file.on('end', () => {
+        resolve({ file: filePath.replace(PUBLIC_PATH_FULL, '').replace(/\\/g, '/'), hash: hash.digest('hex') });
+      });
     });
+
+    const createSha256CspHash = (content: any) => {
+      return crypto.createHash('sha256').update(content).digest('hex');
+    }
 
     const walk = function (dir: any, done: any) {
       var results: any[] = [];
@@ -283,6 +295,15 @@ export default class Deploy extends Command {
             data_hash = [];
             data_len = 0;
           }
+          if(parallel_bulks.length >= 20) {
+            console.log(`${parallel_bulks.length} ${data.length} ${parallel_bulks.length}`);
+            try {
+              await Promise.all(parallel_bulks);
+            } catch(error) {
+              reject(error);
+            }
+            parallel_bulks = [];
+          }
         }
         if (data.length > 0) {
           parallel_bulks.push(kvBulk(data, data_hash));
@@ -296,18 +317,33 @@ export default class Deploy extends Command {
       });
     };
 
-    const saveSiteConfig = function (cb: any) {
+    const saveSiteConfig = async function (cb: any) {
       warn('RUNNING', 'Deploying your site...');
       let assets: any = {};
       for (let i = 0; i < allHashsManifest.length; i++) {
         assets[allHashsManifest[i].file] = allHashsManifest[i].hash;
       }
-      let data_value = JSON.stringify({
+
+      let data:any = {
         lambda_hash: lambda_hash,
         stack: STACK,
         basic_credentials: BASIC_CREDENTIALS,
         assets: assets,
-      });
+      };
+      let data_value = JSON.stringify(data);
+
+      const contentType = 'application/json';
+      const jsonBuf = Buffer.from(data_value, "utf-8");
+      let jsonKey = createSha256CspHash(jsonBuf);
+      const resGetSignedUrl = await bohrApi.get(`/deploy/getSignedUrl?fileName=${jsonKey}&fileType${contentType}`);
+      const retUpload = await uploadToS3(jsonBuf, resGetSignedUrl.data.signedRequest);
+      if (retUpload.status != 200) {
+        throw('saveSiteConfig error\n error saving site(1)');
+      }
+      delete data.assets;
+      data.assets_key = jsonKey;
+      data_value = JSON.stringify(data);
+
       bohrApi.post('/deploy/publish', { data_value, deployId, REF_TYPE, REF_NAME, REPO_OWNER, REPO_NAME }
       ).then((res) => {
         cb(res.data);
@@ -315,6 +351,13 @@ export default class Deploy extends Command {
         console.error(error);
         //@ts-ignore
         originalProcessExit(1);
+      });
+    };
+
+    const uploadToS3 = async function (zipBuf: ArrayBuffer, signedRequest: string) {
+      return await axios.put(signedRequest, zipBuf, {
+        maxContentLength: Infinity,
+        maxBodyLength: Infinity
       });
     };
 
@@ -355,13 +398,6 @@ export default class Deploy extends Command {
                   info('SUCCESS', 'API function uploaded successfully.');
                   return resolve(true);
                 } else {
-                  const uploadToS3 = async function (zipBuf: ArrayBuffer, signedRequest: string) {
-                    return await axios.put(signedRequest, zipBuf, {
-                      maxContentLength: Infinity,
-                      maxBodyLength: Infinity
-                    });
-                  };
-
                   try {
                     const zipHash: any = await hashFile(result[0].path);
                     const ZIP: any = fs.readFileSync(result[0].path, { encoding: 'base64' });
@@ -397,25 +433,49 @@ export default class Deploy extends Command {
       });
     };
 
+    const chunkArray = function (myArray: any, chunk_size: number) {
+      var index = 0;
+      var arrayLength = myArray.length;
+      var tempArray = [];
+
+      for (index = 0; index < arrayLength; index += chunk_size) {
+        let myChunk = myArray.slice(index, index + chunk_size);
+        tempArray.push(myChunk);
+      }
+
+      return tempArray;
+    }
+
     const getMissingFiles = async function () {
       return new Promise(async (resolve, reject) => {
         if (hashes_on_api) {
           let onlyHashes = allHashs.map((el: any) => el.hash);
-          let data = {
-            hashList: onlyHashes,
-            env: (process.env.BOHR_DG_NAME == 'main' ? 'main' : 'dev')
-          };
-          bohrApi.post(`/deploy/get_missing_objects`, data, {
-          }).then((ret) => {
-            if (ret.data.error) {
-              reject(ret.data.error);
-            } else {
-              missingFiles = ret.data;
-              resolve(true);
-            }
+
+          let parallel_bulks: any[] = [];
+          let chunk_size = 5000;
+          let chunks = chunkArray(onlyHashes, chunk_size);
+          chunks.forEach(el => {
+            let data = {
+              hashList: el,
+              env: (process.env.BOHR_DG_NAME == 'main' ? 'main' : 'dev')
+            };
+            parallel_bulks.push(bohrApi.post(`/deploy/get_missing_objects`, data, {
+            }))
+          });
+
+          Promise.all(parallel_bulks).then((ret) => {
+            ret.forEach((el: any) => {
+              if (el.data.error) {
+                reject(el.data.error);
+              } else {
+                missingFiles = [...missingFiles, ...el.data];
+              }
+            })
+            resolve(true);
           }).catch((error: any) => {
             reject(error);
           });
+
         } else {
           resolve(true);
         }
@@ -451,8 +511,8 @@ export default class Deploy extends Command {
       originalProcessExit(1);
     }
 
-    Promise.all([deployLambda(), StaticFilesProcess()]).then(function () {
-      saveSiteConfig(function (ret: any) {
+    Promise.all([deployLambda(), StaticFilesProcess()]).then(async function () {
+      await saveSiteConfig(function (ret: any) {
         info(' DONE ', 'Site deployed successfully: ' + link('https://' + ret.url));
         if (process.env.GITHUB_ACTIONS) {
           execStr('echo "### bohr deploy! :rocket:" >> $GITHUB_STEP_SUMMARY');
