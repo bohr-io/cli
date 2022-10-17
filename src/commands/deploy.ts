@@ -296,7 +296,6 @@ export default class Deploy extends Command {
             data_len = 0;
           }
           if(parallel_bulks.length >= 20) {
-            console.log(`${parallel_bulks.length} ${data.length} ${parallel_bulks.length}`);
             try {
               await Promise.all(parallel_bulks);
             } catch(error) {
