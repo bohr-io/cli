@@ -88,8 +88,9 @@ export default class Deploy extends Command {
       REPO_NAME = REPOSITORY.split('/')[1];
 
       try {
+        const coreAction = require('@actions/core');
         const res = await bohrApi.post('/deploy/start' + ((process.env.GITHUB_ACTIONS) ? '?ga=1' : ''), {
-          ID_TOKEN: process.env.ID_TOKEN,
+          ID_TOKEN: (process.env.GITHUB_ACTIONS) ? await coreAction.getIDToken() : undefined,
           GITHUB_TOKEN: process.env.GITHUB_TOKEN,
           GITHUB_ACTIONS: process.env.GITHUB_ACTIONS,
           REPO_OWNER,
