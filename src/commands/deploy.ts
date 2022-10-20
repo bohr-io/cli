@@ -62,7 +62,6 @@ export default class Deploy extends Command {
 
     //Optional env
     let STACK = process.env.STACK;
-    let BASIC_CREDENTIALS = process.env.BASIC_CREDENTIALS;
 
     const MAIN_ENDPOINT = await getMainEndpoint(DEV_MODE);
     let API_ROUTE = MAIN_ENDPOINT + '/api';
@@ -327,7 +326,6 @@ export default class Deploy extends Command {
       let data:any = {
         lambda_hash: lambda_hash,
         stack: STACK,
-        basic_credentials: BASIC_CREDENTIALS,
         assets: assets,
       };
       let data_value = JSON.stringify(data);
