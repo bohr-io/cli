@@ -56,9 +56,12 @@ export default class Dev extends Command {
             await runInstall(process.env.INSTALL_CMD as string, flags['show-install'], true);
         }
 
+        let DEPLOY_PATH = process.env.DEPLOY_PATH != null ? process.env.DEPLOY_PATH : './';
+        let PUBLIC_PATH = process.env.PUBLIC_PATH != null ? process.env.PUBLIC_PATH : DEPLOY_PATH;
+
         const devServer = new DevServer({
             command: process.env.DEV_CMD as string,
-            publicPath: process.env.PUBLIC_PATH as string,
+            publicPath: PUBLIC_PATH as string,
             flags
         });
 
