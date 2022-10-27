@@ -172,14 +172,10 @@ export default class Deploy extends Command {
 
     const hashFile = (filePath: any) => new Promise(resolve => {
       const hash = crypto.createHash('sha256');
-      const file = fs.createReadStream(filePath, {
-        encoding: 'UTF-8',
-        autoClose: true,
-        emitClose: true
-      });
+      const file = fs.createReadStream(filePath);
 
       file.on('data', (data: any) => {
-        hash.update(data.replace(/\r\n/g, "\n"));
+        hash.update(data);
       });
 
       file.on('end', () => {
@@ -500,7 +496,7 @@ export default class Deploy extends Command {
       return new Promise(async (resolve, reject) => {
         hashDir(PUBLIC_PATH).then(async function (hashs: any) {
           allHashs = hashs;
-          allHashsManifest = hashs.slice()
+          allHashsManifest = hashs.slice();
           await getMissingFiles();
           await uploadFiles();
           info('SUCCESS', 'Files uploaded successfully.');
