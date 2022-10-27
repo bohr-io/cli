@@ -172,10 +172,14 @@ export default class Deploy extends Command {
 
     const hashFile = (filePath: any) => new Promise(resolve => {
       const hash = crypto.createHash('sha256');
-      const file = fs.createReadStream(filePath);
+      const file = fs.createReadStream(filePath, {
+        encoding: 'UTF-8',
+        autoClose: true,
+        emitClose: true
+      });
 
       file.on('data', (data: any) => {
-        hash.update(data);
+        hash.update(data.replace(/\r\n/g, "\n"));
       });
 
       file.on('end', () => {
@@ -215,6 +219,8 @@ export default class Deploy extends Command {
                 (!file_filter.endsWith('.env')) &&
                 (!file_filter.endsWith('/package.json')) &&
                 (!file_filter.endsWith('/package-lock.json')) &&
+                (!file_filter.endsWith('/yarn.lock')) &&
+                (!file_filter.endsWith('/.yarnrc')) &&
                 (!file_filter.endsWith('/.gitignore'))) {
                 if (stat.size < 24 * 1024 * 1024) {
                   results.push(file);
@@ -494,7 +500,7 @@ export default class Deploy extends Command {
       return new Promise(async (resolve, reject) => {
         hashDir(PUBLIC_PATH).then(async function (hashs: any) {
           allHashs = hashs;
-          allHashsManifest = hashs.slice();
+          allHashsManifest = hashs.slice()
           await getMissingFiles();
           await uploadFiles();
           info('SUCCESS', 'Files uploaded successfully.');

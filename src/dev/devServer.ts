@@ -29,7 +29,7 @@ export class DevServer extends EventEmitter {
     }
 
     private getMimeType(ext: string) {
-        const mime: any = { "HTML": 'text/html, charset=utf-8', "TXT": 'text/plain', "SHTM": 'text/html, charset=utf-8', "CSS": 'text/css', "XML": 'text/xml', "GIF": 'image/gif', "JPG": 'image/jpeg', "JPEG": 'image/jpeg', "JS": 'application/x-javascript', "PNG": 'image/png', "TIF": 'image/tiff', "TIFF": 'image/tiff', "ICO": 'image/x-icon', "SVG": 'image/svg+xml', "JSON": 'application/json', "MP4": 'video/mp4', "MOV": 'video/quicktime', "M4V": 'video/x-m4v', "3GP": 'video/3gpp', "WOFF2": 'font/woff2', "WOFF": 'font/woff', "TTF": 'font/ttf' };
+      const mime: any = { "HTML": 'text/html, charset=utf-8', "TXT": 'text/plain', "SHTM": 'text/html, charset=utf-8', "CSS": 'text/css', "XML": 'text/xml', "GIF": 'image/gif', "JPG": 'image/jpeg', "JPEG": 'image/jpeg', "JS": 'application/x-javascript', "PNG": 'image/png', "TIF": 'image/tiff', "TIFF": 'image/tiff', "ICO": 'image/x-icon', "SVG": 'image/svg+xml', "JSON": 'application/json', "MP4": 'video/mp4', "MOV": 'video/quicktime', "M4V": 'video/x-m4v', "3GP": 'video/3gpp', "WOFF2": 'font/woff2', "WOFF": 'font/woff', "TTF": 'font/ttf', "PDF" : 'application/pdf' };
         return mime[ext] != null ? mime[ext] : "text/html, charset=utf-8";
     }
 
