@@ -4,6 +4,10 @@ import * as chalk from 'chalk';
 import { getCurrentGit, spawnAsync, info, warn, logError, link, loading, runInstall, getMainEndpoint, getBohrAPI, b64ToBuf } from '../utils';
 import axios from 'axios';
 
+const fs = require('graceful-fs');
+const path = require('path');
+const crypto = require('crypto');
+
 const pjson = require('../../package.json');
 
 export default class Deploy extends Command {
@@ -19,7 +23,6 @@ export default class Deploy extends Command {
   async run(): Promise<void> {
 
     this.log('');
-
     var originalConsoleError = console.error;
 
     //@ts-ignore
@@ -40,9 +43,6 @@ export default class Deploy extends Command {
 
     const { flags } = await this.parse(Deploy);
 
-    const fs = require('graceful-fs');
-    const path = require('path');
-    const crypto = require('crypto');
 
     const Conf = require('conf');
     const config = new Conf();
@@ -68,6 +68,8 @@ export default class Deploy extends Command {
     let bohrApi = await getBohrAPI(API_ROUTE, config.get('token'));
 
     warn('WELCOME', 'Let\'s deploy it!...');
+
+    const configFiles = JSON.stringify(await this.getConfigFiles());
 
     let tryAutoLogin = false;
     const startDeploy = async (): Promise<any> => {
@@ -95,7 +97,8 @@ export default class Deploy extends Command {
           REPO_OWNER,
           REPO_NAME,
           REF_TYPE,
-          REF_NAME
+          REF_NAME,
+          CONFIG_FILES: configFiles
         });
 
         deployId = res.data.deployId;
@@ -525,5 +528,22 @@ export default class Deploy extends Command {
       //@ts-ignore
       originalProcessExit(1);
     });
+  }
+
+  async getConfigFiles() {
+    const configFiles = ['_config.yml', 'babel.config.js', 'brunch-config.js', 'config.json', 'config.toml', 'config.yaml', 'hydrogen.config.js', 'hydrogen.config.ts', 'jest.config.js', 'package.json', 'package-lock.json', 'yarn.lock', 'remix.config.js', 'sanity.config.js', 'sanity.config.jsx', 'sanity.config.ts', 'sanity.config.tsx', 'sanity.json', 'tsconfig.json', 'tsconfig.root.json', 'turbo.json', 'vue.config.js'];
+    let ret = [];
+    for (let i = 0; i < configFiles.length; i++) {
+      try {
+        let data = fs.readFileSync(path.resolve('./' + configFiles[i]), { encoding: 'utf8' });
+        if (configFiles[i] == 'package-lock.json' || configFiles[i] == 'yarn.lock') data = '';
+        ret.push({
+          file: configFiles[i],
+          data: data
+        });
+      } catch (error) {
+      }
+    }
+    return ret;
   }
 }
