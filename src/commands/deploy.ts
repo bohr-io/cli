@@ -98,7 +98,8 @@ export default class Deploy extends Command {
           REPO_NAME,
           REF_TYPE,
           REF_NAME,
-          CONFIG_FILES: configFiles
+          CONFIG_FILES: configFiles,
+          GITHUB_ACTIONS_RUN_ID: (process.env.GITHUB_ACTIONS ? process.env.GITHUB_RUN_ID : undefined)
         });
 
         deployId = res.data.deployId;
