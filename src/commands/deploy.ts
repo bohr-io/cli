@@ -99,7 +99,7 @@ export default class Deploy extends Command {
           REF_TYPE,
           REF_NAME,
           CONFIG_FILES: configFiles,
-          GITHUB_ACTIONS_RUN_ID: (process.env.GITHUB_ACTIONS ? process.env.GITHUB_RUN_ID : undefined)
+          GITHUB_ACTIONS_RUN_ID: process.env.GITHUB_RUN_ID
         });
 
         deployId = res.data.deployId;
