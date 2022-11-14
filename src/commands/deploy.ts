@@ -150,6 +150,7 @@ export default class Deploy extends Command {
         warn('RUNNING', 'Building your site - ' + chalk.red(process.env.TURBOREPO_TOKEN ? process.env.BUILD_CMD.replace(process.env.TURBOREPO_TOKEN, '***') : process.env.BUILD_CMD));
       }
       try {
+        delete process.env.CI;
         await spawnAsync(process.env.BUILD_CMD, flags['show-build'], true);
         if (process.env.GITHUB_ACTIONS) console.log('::endgroup::');
         info('SUCCESS', 'Your site has been successfully built.');
