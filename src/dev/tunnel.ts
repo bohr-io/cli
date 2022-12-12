@@ -57,7 +57,7 @@ export class Tunnel extends EventEmitter {
     async start() {
         this.port = await portfinder.getPortPromise({ port: 8787 });
         //let command = `cd ${getGlobalBohrPath()} ` + (isBohrPath() ? `&& node saveEnv.js ` : '') + `&& cd tunnel && npx --yes miniflare dist/index.mjs --watch --env ../.env --kv-persist ../.bohr/kv --port ${this.port}`;
-        let command = `cd ${getGlobalBohrPath()} ` + (isBohrPath() ? `&& node saveEnv.js ` : '') + `&& cd tunnel && npx wrangler@beta dev --local --env ../.env --port ${this.port}`;
+        let command = `cd ${getGlobalBohrPath()} ` + (isBohrPath() ? `&& node saveWrangler.js ` : '') + `&& cd tunnel && npx --yes wrangler@beta -c wrangler.dev.toml dev --port ${this.port}`;
         warn('RUNNING', 'Starting edge server - ' + chalk.red(command));
         spawnAsync(command, true, true).catch((error) => {
             console.log('\n\n');
