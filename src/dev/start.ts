@@ -41,22 +41,20 @@ export class StartDev extends EventEmitter {
             Object.keys(res.data.env).forEach(function (key) { process.env[key] = res.data.env[key]; });
         } catch (error: any) {
             if (error.response) {
-                if (error.response.status == 401) {
-                    if (this.opts.devMode) {
-                        if (!this.tryAutoLogin) {
-                            this.tryAutoLogin = true;
-                            loading('DEV_MODE', 'Calling auto login...');
-                            await Login.run();
-                            const config = new (require('conf'))();
-                            Object.assign(this.opts.bohrApi.defaults.headers, { 'Cookie': 'BohrSession=' + config.get('token') });
-                            return await this.run();
-                        }
-                    } else {
-                        console.error('Please, run "login" command first.');
-                        //@ts-ignore
-                        originalProcessExit(1);
-                    }
+              if (error.response.status == 401) {
+                if (!this.tryAutoLogin) {
+                    this.tryAutoLogin = true;
+                    loading('DEV_MODE', 'Calling auto login...');
+                    await Login.run();
+                    const config = new (require('conf'))();
+                    Object.assign(this.opts.bohrApi.defaults.headers, { 'Cookie': 'BohrSession=' + config.get('token') });
+                    return await this.run();
+                } else {
+                  console.error('Please, run "login" command first.');
+                  //@ts-ignore
+                  originalProcessExit(1);
                 }
+              }
             }
             console.error(error);
             if (this.opts.devMode) {

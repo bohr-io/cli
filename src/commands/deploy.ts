@@ -115,14 +115,12 @@ export default class Deploy extends Command {
       } catch (error: any) {
         if (error.response) {
           if (error.response.status == 401) {
-            if (DEV_MODE) {
-              if (!tryAutoLogin) {
-                tryAutoLogin = true;
-                loading('DEV_MODE', 'Calling auto login...');
-                await Login.run();
-                Object.assign(bohrApi.defaults.headers, { 'Cookie': 'BohrSession=' + config.get('token') });
-                return await startDeploy();
-              }
+            if (!tryAutoLogin) {
+              tryAutoLogin = true;
+              loading('DEV_MODE', 'Calling auto login...');
+              await Login.run();
+              Object.assign(bohrApi.defaults.headers, { 'Cookie': 'BohrSession=' + config.get('token') });
+              return await startDeploy();
             }
             this.error('Please, run "login" command first.');
           }
@@ -155,6 +153,13 @@ export default class Deploy extends Command {
         if (process.env.GITHUB_ACTIONS) console.log('::endgroup::');
         info('SUCCESS', 'Your site has been successfully built.');
       } catch (error: any) {
+        if(deployId){
+          await bohrApi.post('/deploy/setDeployError', {
+            deployId,
+            REPO_OWNER,
+            REPO_NAME,
+          });        
+        }
         if (process.env.GITHUB_ACTIONS) console.log('::endgroup::');
         this.log('\n\n');
         logError('ERROR', 'An error occurred while building the site.');
@@ -352,7 +357,14 @@ export default class Deploy extends Command {
       bohrApi.post('/deploy/publish', { data_value, deployId, REF_TYPE, REF_NAME, REPO_OWNER, REPO_NAME }
       ).then((res) => {
         cb(res.data);
-      }).catch((error) => {
+      }).catch(async (error) => {
+        if(deployId){
+          await bohrApi.post('/deploy/setDeployError', {
+            deployId,
+            REPO_OWNER,
+            REPO_NAME,
+          });        
+        }        
         console.error(error);
         //@ts-ignore
         originalProcessExit(1);
