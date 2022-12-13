@@ -144,6 +144,7 @@ function getLineNumber(args: any) {
 
   try {
     let messageError = getErrorStack(args);
+    if(!messageError) return '0';
     if (messageError.includes('api\\core\\')) {
       logLineNumber = messageError.split('api\\core\\')[1];
     } else {
@@ -155,7 +156,7 @@ function getLineNumber(args: any) {
     return logLineNumber;
   } catch (error) {
     console.log(error);
-    return;
+    return '0';
   }
 }
 
