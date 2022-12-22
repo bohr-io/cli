@@ -158,6 +158,7 @@ export default class Deploy extends Command {
             deployId,
             REPO_OWNER,
             REPO_NAME,
+            errorMessage: error.stderr
           });        
         }
         if (process.env.GITHUB_ACTIONS) console.log('::endgroup::');
@@ -363,6 +364,7 @@ export default class Deploy extends Command {
             deployId,
             REPO_OWNER,
             REPO_NAME,
+            errorMessage: error
           });        
         }        
         console.error(error);
