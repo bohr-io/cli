@@ -61,7 +61,8 @@ export class DevServer extends EventEmitter {
     public async run() {
         this.port = await portfinder.getPortPromise({ port: this.opts.port });
         this.host = 'localhost' + (this.port != 80 ? ':' + this.port : '');
-
+        process.env.PORT = this.port.toString();
+        process.env.BROWSER = 'none';
         if (this.opts.command == null || this.opts.flags['no-dev']) {
             this.serveStaticFiles(this.port, 'localhost', this.opts.publicPath);
             this.protocol = 'http';

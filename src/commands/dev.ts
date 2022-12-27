@@ -94,7 +94,6 @@ export default class Dev extends Command {
         await functionServer.run();
         await tunnel.init();
         await mainServer.run();
-
         
         process.on('SIGINT', async function () {
             try {
