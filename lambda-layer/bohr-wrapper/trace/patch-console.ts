@@ -3,6 +3,14 @@ import { inspect } from "util";
 import { getLogLevel, LogLevel, setLogLevel } from "../utils/log";
 import { WebSocket } from "ws";
 import * as parser from 'engine.io-parser'
+import { readFile } from "fs/promises";
+import { SourceMapConsumer } from 'source-map';
+
+
+async function readJsonFile(path: any) {
+  const file = await readFile(path, "utf8");
+  return JSON.parse(file);
+}
 
 // const wsUrl = 'ws://localhost:8787/bohr_push_log';
 const wsUrl = (process.env.BOHR_REPO_OWNER == 'bohr-io' && process.env.BOHR_REPO_NAME == 'core' && process.env.BOHR_DG_NAME != 'main') ? 'wss://bohr.rocks/bohr_push_log' : 'wss://bohr.io/bohr_push_log';
@@ -63,11 +71,11 @@ export function unpatchConsole(cnsle: Console) {
   unpatchMethod(cnsle, "trace");
 }
 
-function patchMethod(mod: Console, method: LogMethod) {
+async function patchMethod(mod: Console, method: LogMethod) {
   if (mod[method].__wrapped !== undefined) return;
   shimmer.wrap(mod, method, (original) => {
     let isLogging = false;
-    return function emitWithContext(this: any, message?: any, ...optionalParams: any[]) {
+    return async function emitWithContext(this: any, message?: any, ...optionalParams: any[]) {
       if (isLogging) {
         return original.apply(this as any, arguments as any);
       }
@@ -88,9 +96,9 @@ function patchMethod(mod: Console, method: LogMethod) {
           if (typeof logContent !== "string") logContent = inspect(logContent);
           arguments[0] = `${prefix}${logContent}`;
         }
-
-        let logArguments: any = getArguments(arguments);
-        let logLineNumber = getLineNumber(arguments);
+        const mainErrorStack = new Error().stack.split('\n')[2];
+        let logArguments: any = await getArguments(arguments);
+        let logLineNumber = await getLineNumber(arguments, mainErrorStack);
 
         logsQueue = [...logsQueue, {
           BOHR_REPO_OWNER: process.env.BOHR_REPO_OWNER,
@@ -129,7 +137,7 @@ function patchMethod(mod: Console, method: LogMethod) {
   });
 }
 
-function getArguments(args: any) {
+async function getArguments(args: any) {
   let multipleArguments: any;
   if (args.length > 1) {
     multipleArguments = Object.values(args).join(', ');
@@ -139,38 +147,107 @@ function getArguments(args: any) {
   return multipleArguments;
 }
 
-function getLineNumber(args: any) {
+async function getLineNumber(args: any, mainErrorStack: any) {
   let logLineNumber = null;
+  let newLogLineNumber = null;
 
   try {
-    let messageError = getErrorStack(args);
-    if(!messageError) return '0';
-    if (messageError.includes('api\\core\\')) {
-      logLineNumber = messageError.split('api\\core\\')[1];
-    } else {
-      logLineNumber = messageError.split('api/core/')[1];
+    let messageError = await getErrorStack(args);
+    if (!messageError) {
+      messageError = mainErrorStack;
     }
-    if(logLineNumber){
-      logLineNumber = logLineNumber.substring(0, logLineNumber.lastIndexOf(":"));
+    if (!messageError) {
+      return '0';
     }
+    try {
+      newLogLineNumber = await getNewLogLine(messageError);
+    } catch (error) {
+      console.error(error);
+    }
+    logLineNumber = newLogLineNumber;
+    if (!logLineNumber) {
+      if (messageError.includes('api\\core\\')) {
+        logLineNumber = messageError.split('api\\core\\')[1];
+      } else if (messageError.includes('api/core/')) {
+        logLineNumber = messageError.split('api/core/')[1];
+      } else if (messageError.includes('var/task/')) {
+        logLineNumber = messageError.split('var/task/')[1];
+      } else if (messageError.includes('var\\task\\')) {
+        logLineNumber = messageError.split('var\\task\\')[1];
+      } else {
+        logLineNumber = messageError;
+      }
+      if (logLineNumber) {
+        logLineNumber = logLineNumber.substring(0, logLineNumber.lastIndexOf(":"));
+      }
+    } 
     return logLineNumber;
   } catch (error) {
-    console.log(error);
+    console.error(error);
     return '0';
   }
 }
 
-function getErrorStack(args: any) {
-  let argsErrorStack = args[0].split('\n')
-  let errorStack = argsErrorStack.find((errorLine: any) => {
-    return errorLine.includes('api\\core\\') || errorLine.includes('api/core/');
-  });
-  if ((!errorStack || !args[0].includes('Error'))) {
-    errorStack = new Error().stack.split('\n').find((errorLine: any) => {
+async function getNewLogLine(messageError: any) {
+  try {
+    let newLogLineNumber: any = null;
+    let fullPath = null;
+    let line: any = null;
+    let column: any = null;
+    if (!messageError) return null;
+    fullPath = messageError.replace("at ", '').trim();
+    if (fullPath.includes('(') && fullPath.includes(')')) {
+      fullPath = fullPath.substring(fullPath.lastIndexOf("(") + 1, fullPath.length);
+      fullPath = fullPath.substring(0, fullPath.lastIndexOf(")"));
+    }
+  
+    column = fullPath.substring(fullPath.lastIndexOf(":") + 1, fullPath.length);
+    fullPath = fullPath.substring(0, fullPath.lastIndexOf(":"));
+    line = fullPath.substring(fullPath.lastIndexOf(":") + 1, fullPath.length);
+    fullPath = fullPath.substring(0, fullPath.lastIndexOf(":"));
+  
+    let mapData = await readJsonFile(`${fullPath}.map`);
+    await SourceMapConsumer.with(mapData, null, consumer => {
+      let originalPositions = consumer.originalPositionFor({
+        line: parseInt(line),
+        column: parseInt(column),
+      })
+      newLogLineNumber = `${originalPositions.source.substring(originalPositions.source.lastIndexOf('..') + 3, originalPositions.source.length)}:${originalPositions.line}`;
+    });
+    return newLogLineNumber;
+  } catch (error) {
+    return null;
+  }
+}
+
+async function getErrorStack(args: any) {
+  try {
+    let argsErrorStack = args[0].split('\n')
+    let errorStack = argsErrorStack.find((errorLine: any) => {
       return errorLine.includes('api\\core\\') || errorLine.includes('api/core/');
     });
-  } 
-  return errorStack;
+    if ((!errorStack || !args[0].includes('Error'))) {
+      errorStack = new Error().stack.split('\n').find((errorLine: any) => {
+        return errorLine.includes('api\\core\\') || errorLine.includes('api/core/');
+      });
+    }
+    if (!errorStack) {
+      errorStack = argsErrorStack.find((errorLine: any) => {
+        return errorLine.includes('var\\task\\') || errorLine.includes('var/task/');
+      });
+    }
+    if (!errorStack) {
+      errorStack = new Error().stack.split('\n').find((errorLine: any) => {
+        return errorLine.includes('var\\task\\') || errorLine.includes('var/task/');
+      });
+    }
+    if (!errorStack) {
+      return null;
+    }
+    return errorStack;
+  } catch (error) {
+    console.error(error);
+  }
 }
 
 function unpatchMethod(mod: Console, method: LogMethod) {

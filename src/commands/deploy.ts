@@ -134,6 +134,8 @@ export default class Deploy extends Command {
 
     let DEPLOY_PATH = process.env.DEPLOY_PATH != null ? process.env.DEPLOY_PATH : './';
     let PUBLIC_PATH = process.env.PUBLIC_PATH != null ? process.env.PUBLIC_PATH : DEPLOY_PATH;
+    if (PUBLIC_PATH.substring(0, 1) == '/') PUBLIC_PATH = `.${PUBLIC_PATH}`;
+    if (PUBLIC_PATH.substring(0, 2) != './') PUBLIC_PATH = `./${PUBLIC_PATH}`;
 
     //Install
     if (process.env.INSTALL_CMD && !flags['no-install']) {
@@ -155,13 +157,13 @@ export default class Deploy extends Command {
         if (process.env.GITHUB_ACTIONS) console.log('::endgroup::');
         info('SUCCESS', 'Your site has been successfully built.');
       } catch (error: any) {
-        if(deployId){
+        if (deployId) {
           await bohrApi.post('/deploy/setDeployError', {
             deployId,
             REPO_OWNER,
             REPO_NAME,
             errorMessage: error.stderr
-          });        
+          });
         }
         if (process.env.GITHUB_ACTIONS) console.log('::endgroup::');
         this.log('\n\n');
@@ -310,10 +312,10 @@ export default class Deploy extends Command {
             data_hash = [];
             data_len = 0;
           }
-          if(parallel_bulks.length >= 20) {
+          if (parallel_bulks.length >= 20) {
             try {
               await Promise.all(parallel_bulks);
-            } catch(error) {
+            } catch (error) {
               reject(error);
             }
             parallel_bulks = [];
@@ -338,7 +340,7 @@ export default class Deploy extends Command {
         assets[allHashsManifest[i].file] = allHashsManifest[i].hash;
       }
 
-      let data:any = {
+      let data: any = {
         lambda_hash: lambda_hash,
         stack: STACK,
         assets: assets,
@@ -351,7 +353,7 @@ export default class Deploy extends Command {
       const resGetSignedUrl = await bohrApi.get(`/deploy/getSignedUrl?fileName=${jsonKey}&fileType${contentType}`);
       const retUpload = await uploadToS3(jsonBuf, resGetSignedUrl.data.signedRequest);
       if (retUpload.status != 200) {
-        throw('saveSiteConfig error\n error saving site(1)');
+        throw ('saveSiteConfig error\n error saving site(1)');
       }
       delete data.assets;
       data.assets_key = jsonKey;
@@ -361,14 +363,14 @@ export default class Deploy extends Command {
       ).then((res) => {
         cb(res.data);
       }).catch(async (error) => {
-        if(deployId){
+        if (deployId) {
           await bohrApi.post('/deploy/setDeployError', {
             deployId,
             REPO_OWNER,
             REPO_NAME,
             errorMessage: error
-          });        
-        }        
+          });
+        }
         console.error(error);
         //@ts-ignore
         originalProcessExit(1);

@@ -58,6 +58,8 @@ export default class Dev extends Command {
 
         let DEPLOY_PATH = process.env.DEPLOY_PATH != null ? process.env.DEPLOY_PATH : './';
         let PUBLIC_PATH = process.env.PUBLIC_PATH != null ? process.env.PUBLIC_PATH : DEPLOY_PATH;
+        if (PUBLIC_PATH.substring(0, 1) == '/') PUBLIC_PATH = `.${PUBLIC_PATH}`;
+        if (PUBLIC_PATH.substring(0, 2) != './') PUBLIC_PATH = `./${PUBLIC_PATH}`;
 
         const devServer = new DevServer({
             command: process.env.DEV_CMD as string,
@@ -81,9 +83,9 @@ export default class Dev extends Command {
             info('READY', 'Tunnel running on ' + link('https://' + process.env.BOHR_TUNNEL_URL));
             info('READY', 'API running on ' + link('http://' + mainServer.host + '/api'));
             try {
-                if(process.env.BOHR_LOCALHOST_ID){
-                    bohrApi.put(`/dev/localhost`, {id: process.env.BOHR_LOCALHOST_ID, status: "RUNNING"});
-                }               
+                if (process.env.BOHR_LOCALHOST_ID) {
+                    bohrApi.put(`/dev/localhost`, { id: process.env.BOHR_LOCALHOST_ID, status: "RUNNING" });
+                }
             } catch (error) {
                 console.error(error);
             }
@@ -94,16 +96,16 @@ export default class Dev extends Command {
         await functionServer.run();
         await tunnel.init();
         await mainServer.run();
-        
+
         process.on('SIGINT', async function () {
             try {
-                if(process.env.BOHR_LOCALHOST_ID){
-                    await bohrApi.put(`/dev/localhost`, {id: process.env.BOHR_LOCALHOST_ID, status: "CLOSED"});
+                if (process.env.BOHR_LOCALHOST_ID) {
+                    await bohrApi.put(`/dev/localhost`, { id: process.env.BOHR_LOCALHOST_ID, status: "CLOSED" });
                 }
             } catch (error) {
                 console.error(error);
-            }            
-            
+            }
+
             originalExit(0);
         });
     }
