@@ -403,6 +403,14 @@ export default class Deploy extends Command {
             const archives = await zipFunctions(API_PATH, './' + DIST_API_PATH);
             return archives;
           } catch (e) {
+            if (deployId) {
+              await bohrApi.post('/deploy/setDeployError', {
+                deployId,
+                REPO_OWNER,
+                REPO_NAME,
+                errorMessage: e
+              });
+            }            
             console.error(e);
             //@ts-ignore
             originalProcessExit(1);
@@ -450,7 +458,15 @@ export default class Deploy extends Command {
               return reject('getFunctionExists error\n' + error);
             });
           });
-        }).catch(err => {
+        }).catch(async (err) => {
+          if (deployId) {
+            await bohrApi.post('/deploy/setDeployError', {
+              deployId,
+              REPO_OWNER,
+              REPO_NAME,
+              errorMessage: err
+            });
+          }             
           return reject(err);
         });
       });
