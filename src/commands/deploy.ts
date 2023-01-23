@@ -177,6 +177,33 @@ export default class Deploy extends Command {
 
     //Global vars
     const PUBLIC_PATH_FULL = path.resolve(PUBLIC_PATH);
+    const findIndexHTML = async (PUBLIC_PATH_FULL: string) => new Promise(resolve => {
+      fs.readdir(PUBLIC_PATH_FULL, async function (err: any, list: any) {
+        if (err) return false;
+        await list.forEach(function (file: any) {
+          if(file.toLowerCase() == "index.html" ) {
+            resolve(true);
+          }
+        });
+        resolve(false);
+      });
+    });
+
+    if(!await findIndexHTML(PUBLIC_PATH_FULL)){
+      if (deployId) {
+        await bohrApi.post('/deploy/setDeployError', {
+          deployId,
+          REPO_OWNER,
+          REPO_NAME,
+          errorMessage: "index.html not found in Public folder."
+        });
+        if (process.env.GITHUB_ACTIONS) console.log('::endgroup::');
+        this.log('\n\n');
+        logError('ERROR', 'index.html not found in Public folder.');
+        this.exit(1);        
+      }
+    }
+
     let allHashs: any = null;
     let allHashsManifest: any = null;
     let lambda_hash = '';
