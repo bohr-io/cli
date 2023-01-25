@@ -59,7 +59,6 @@ export default class Deploy extends Command {
     let REF_TYPE = "BRANCH";
     let REF_NAME: any = null;
     let deployId: any = null;
-    let oldDeployId: any = null;
 
     //Optional env
     let STACK = process.env.STACK;
@@ -104,7 +103,6 @@ export default class Deploy extends Command {
         });
 
         deployId = res.data.deployId;
-        oldDeployId = res.data.oldDeployId;
 
         Object.keys(res.data.env).forEach(function (key) { process.env[key] = res.data.env[key]; });
 
@@ -386,7 +384,7 @@ export default class Deploy extends Command {
       data.assets_key = jsonKey;
       data_value = JSON.stringify(data);
 
-      bohrApi.post('/deploy/publish', { data_value, deployId, REF_TYPE, REF_NAME, REPO_OWNER, REPO_NAME, oldDeployId }
+      bohrApi.post('/deploy/publish', { data_value, deployId, REF_TYPE, REF_NAME, REPO_OWNER, REPO_NAME }
       ).then((res) => {
         cb(res.data);
       }).catch(async (error) => {
