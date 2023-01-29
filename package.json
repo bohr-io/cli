@@ -80,7 +80,7 @@
     "topicSeparator": " "
   },
   "scripts": {
-    "build-cli": "shx rm -rf tmp && rm -rf dist && npx tsc -b && npx oclif manifest && npx oclif readme",
+    "build-cli": "shx rm -rf tmp && shx rm -rf dist && npx tsc -b && npx oclif manifest && npx oclif readme",
     "lint-cli": "eslint . --ext .ts --config .eslintrc",
     "test-cli": "mocha --forbid-only \"test/**/*.test.ts\"",
     "posttest-cli": "yarn run lint"
