@@ -63,7 +63,7 @@ export class DevServer extends EventEmitter {
         this.host = 'localhost' + (this.port != 80 ? ':' + this.port : '');
         process.env.PORT = this.port.toString();
         process.env.BROWSER = 'none';
-        if (this.opts.command == null || this.opts.flags['no-dev']) {
+        if (this.opts.command == null || this.opts.command == '' || this.opts.flags['no-dev']) {
             this.serveStaticFiles(this.port, 'localhost', this.opts.publicPath);
             this.protocol = 'http';
         } else {
