@@ -70,7 +70,7 @@ export default class Deploy extends Command {
     warn('WELCOME', 'Let\'s deploy it!...');
 
     const configFiles = JSON.stringify(await this.getConfigFiles());
-
+    let firstDeployFromTemplate = false;
     let tryAutoLogin = false;
     const startDeploy = async (): Promise<any> => {
       let REPOSITORY: any = null;
@@ -102,6 +102,10 @@ export default class Deploy extends Command {
           GITHUB_ACTIONS_RUN_ID: process.env.GITHUB_RUN_ID
         });
 
+        if(res.data.firstDeployFromTemplate){
+          firstDeployFromTemplate = res.data.firstDeployFromTemplate;
+          return;
+        }
         deployId = res.data.deployId;
 
         Object.keys(res.data.env).forEach(function (key) { process.env[key] = res.data.env[key]; });
@@ -129,6 +133,10 @@ export default class Deploy extends Command {
       }
     };
     await startDeploy();
+    if(firstDeployFromTemplate){
+      info(' DONE ', 'Site deployed successfully: ');
+      return;
+    }
 
     let DEPLOY_PATH = process.env.DEPLOY_PATH != null ? process.env.DEPLOY_PATH : './';
     let PUBLIC_PATH = process.env.PUBLIC_PATH != null ? process.env.PUBLIC_PATH : DEPLOY_PATH;
