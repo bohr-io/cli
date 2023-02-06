@@ -138,8 +138,9 @@ export default class Deploy extends Command {
       return;
     }
 
-    let DEPLOY_PATH = process.env.DEPLOY_PATH != null ? process.env.DEPLOY_PATH : './';
-    let PUBLIC_PATH = process.env.PUBLIC_PATH != null ? process.env.PUBLIC_PATH : DEPLOY_PATH;
+    let DEPLOY_PATH = (process.env.DEPLOY_PATH != null && process.env.DEPLOY_PATH.length > 0) ? process.env.DEPLOY_PATH : './';
+    let PUBLIC_PATH = (process.env.PUBLIC_PATH != null && process.env.PUBLIC_PATH.length > 0) ? process.env.PUBLIC_PATH : DEPLOY_PATH;
+
     if (PUBLIC_PATH.substring(0, 1) == '/') PUBLIC_PATH = `.${PUBLIC_PATH}`;
     if (PUBLIC_PATH.substring(0, 2) != './') PUBLIC_PATH = `./${PUBLIC_PATH}`;
 
