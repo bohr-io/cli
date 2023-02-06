@@ -33,7 +33,7 @@ export default class Login extends Command {
                 const Conf = require('conf');
                 const config = new Conf();
                 config.set('token', query.token);
-                response.writeHead(302, { 'Location': MAIN_ENDPOINT + '/projects' });
+                response.writeHead(302, { 'Location': MAIN_ENDPOINT + '/home' });
                 response.end();
                 for (const socket of sockets) {
                     socket.destroy();
