@@ -394,3 +394,49 @@ export function b64ToBuf(base64: string) {
 export function ab2str(buf: any) {
   return String.fromCharCode.apply(null, new Uint8Array(buf) as any);
 }
+
+export async function copyFolderRecursive(source: string, destination: string) {
+  const fs = require('fs').promises;
+  const path = require('path');
+  try {
+    await fs.mkdir(destination, { recursive: true });
+  } catch (error) {
+  }
+  const files = await fs.readdir(source);
+  for (const file of files) {
+    const currentPath = path.join(source, file);
+    const destinationPath = path.join(destination, file);
+    const fileStat = await fs.stat(currentPath);
+    if (fileStat.isDirectory()) {
+      await fs.mkdir(destinationPath, { recursive: true });
+      await copyFolderRecursive(currentPath, destinationPath);
+    } else {
+      await fs.copyFile(currentPath, destinationPath);
+    }
+  }
+}
+
+export function createRunScript(destination: string) {
+  const fs = require('fs');
+  const content = "#!/bin/bash\n\n[ ! -d '/tmp/cache' ] && mkdir -p /tmp/cache\n\nexec node server.js\n";
+  fs.writeFileSync(destination + '/run.sh', content);
+}
+
+export async function createZip(directoryPath: string, zipFilePath: string) {
+  const fs = require('fs');
+  const archiver = require('archiver');
+  const output = fs.createWriteStream(zipFilePath);
+  const archive = archiver('zip', { zlib: { level: 9 } });
+  const promise = new Promise(async (resolve, reject) => {
+    output.on('close', function() {
+      resolve(true);
+    });
+    archive.on('error', function(error: any) {
+      reject(error);
+    });
+  });
+  archive.pipe(output);
+  archive.directory(directoryPath, false);
+  archive.finalize();
+  return Promise.resolve(promise);
+}

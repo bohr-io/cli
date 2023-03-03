@@ -1,7 +1,7 @@
 import { Command, Flags } from '@oclif/core';
 import Login from './login';
 import * as chalk from 'chalk';
-import { getCurrentGit, spawnAsync, info, warn, logError, link, loading, runInstall, getMainEndpoint, getBohrAPI, b64ToBuf } from '../utils';
+import { getCurrentGit, spawnAsync, info, warn, logError, link, loading, runInstall, getMainEndpoint, getBohrAPI, b64ToBuf, copyFolderRecursive, createRunScript, createZip } from '../utils';
 import axios from 'axios';
 
 const fs = require('graceful-fs');
@@ -184,33 +184,6 @@ export default class Deploy extends Command {
 
     //Global vars
     const PUBLIC_PATH_FULL = path.resolve(PUBLIC_PATH);
-    const findIndexHTML = async (PUBLIC_PATH_FULL: string) => new Promise(resolve => {
-      fs.readdir(PUBLIC_PATH_FULL, async function (err: any, list: any) {
-        if (err) return false;
-        await list.forEach(function (file: any) {
-          if(file.toLowerCase() == "index.html" ) {
-            resolve(true);
-          }
-        });
-        resolve(false);
-      });
-    });
-
-    if(!await findIndexHTML(PUBLIC_PATH_FULL)){
-      if (deployId) {
-        await bohrApi.post('/deploy/setDeployError', {
-          deployId,
-          REPO_OWNER,
-          REPO_NAME,
-          errorMessage: "index.html not found in Public folder."
-        });
-        if (process.env.GITHUB_ACTIONS) console.log('::endgroup::');
-        this.log('\n\n');
-        logError('ERROR', 'index.html not found in Public folder.');
-        this.exit(1);        
-      }
-    }
-
     let allHashs: any = null;
     let allHashsManifest: any = null;
     let lambda_hash = '';
@@ -219,7 +192,7 @@ export default class Deploy extends Command {
     //Store hashes via api
     const hashes_on_api = true;
 
-    const hashFile = (filePath: any) => new Promise(resolve => {
+    const hashFile = (filePath: string) => new Promise(resolve => {
       const hash = crypto.createHash('sha256');
       const file = fs.createReadStream(filePath);
 
@@ -370,8 +343,10 @@ export default class Deploy extends Command {
     const saveSiteConfig = async function (cb: any) {
       warn('RUNNING', 'Deploying your site...');
       let assets: any = {};
-      for (let i = 0; i < allHashsManifest.length; i++) {
-        assets[allHashsManifest[i].file] = allHashsManifest[i].hash;
+      if (allHashsManifest != null) {
+        for (let i = 0; i < allHashsManifest.length; i++) {
+          assets[allHashsManifest[i].file] = allHashsManifest[i].hash;
+        }
       }
 
       let data: any = {
@@ -418,6 +393,67 @@ export default class Deploy extends Command {
       });
     };
 
+    const getFunctionExists = async function (hash: string) {
+      let functionExists = false;
+      try {
+        if (DEV_MODE && flags['no-install'] && flags['no-build'] && fs.existsSync('.next\\function.zip')) {
+          functionExists = true;
+        } else {
+          const response = await bohrApi.get(`/deploy/getFunctionExists?hash=` + hash);
+          if (response.data.success) {
+            if (response.data.exists) {
+              functionExists = true;
+            }
+          } else {
+            throw 'getFunctionExists error\n' + response.data;
+          }
+        }
+      } catch (error: any) {
+        if (error.response) {
+          if (error.response.status == 401) {
+            throw 'Please, run "login" command first.';
+          }
+        }
+        throw 'getFunctionExists error\n' + error;
+      }
+      return functionExists;
+    };
+
+    const uploadZip = function(functionZipPath: string) {
+      return new Promise(async (resolve, reject) => {
+        try {
+          const hash: any = await hashFile(functionZipPath);
+          lambda_hash = hash.hash;
+          
+          let functionExists = await getFunctionExists(hash.hash);
+          
+          if (functionExists) {
+            info('SUCCESS', 'Function uploaded successfully (bypass).');
+            return resolve(true);
+          } else {
+            try {
+              const ZIP: any = fs.readFileSync(functionZipPath, { encoding: 'base64' });
+
+              const contentType = 'application/zip';
+              const zipBuf = b64ToBuf(ZIP);
+              const resGetSignedUrl = await bohrApi.get(`/deploy/getSignedUrl?fileName=${hash.hash}&fileType${contentType}`);
+              const retUpload = await uploadToS3(zipBuf, resGetSignedUrl.data.signedRequest);
+              if (retUpload.status != 200) {
+                throw 'deployLambda error\nupload error (1)';
+              }
+              info('SUCCESS', 'Function uploaded successfully.');
+              return resolve(true);
+            } catch (error: any) {
+              throw 'deployLambda error\n' + error;
+            }
+          }
+
+        } catch (error: any) {
+          return reject(error);
+        }
+      });
+    }
+
     const deployLambda = async function () {
       return new Promise(async (resolve, reject) => {
         const API_PATH = DEPLOY_PATH + '/api';
@@ -450,48 +486,17 @@ export default class Deploy extends Command {
             originalProcessExit(1);
           }
         };
-        ZipAndShip().then(result => {
+        ZipAndShip().then(async result => {
           if (result.length == 0) {
             info('SUCCESS', 'API function uploaded successfully.');
             return resolve(true);
           }
-          hashFile(result[0].path).then((hash: any) => {
-            lambda_hash = hash.hash
-            bohrApi.get(`/deploy/getFunctionExists?hash=` + hash.hash).then(async (response) => {
-              if (response.data.success) {
-                if (response.data.exists) {
-                  info('SUCCESS', 'API function uploaded successfully.');
-                  return resolve(true);
-                } else {
-                  try {
-                    const zipHash: any = await hashFile(result[0].path);
-                    const ZIP: any = fs.readFileSync(result[0].path, { encoding: 'base64' });
-
-                    const contentType = 'application/zip';
-                    const zipBuf = b64ToBuf(ZIP);
-                    const resGetSignedUrl = await bohrApi.get(`/deploy/getSignedUrl?fileName=${zipHash.hash}&fileType${contentType}`);
-                    const retUpload = await uploadToS3(zipBuf, resGetSignedUrl.data.signedRequest);
-                    if (retUpload.status != 200) {
-                      return reject('deployLambda error\nupload error (1)');
-                    }
-                    info('SUCCESS', 'API function uploaded successfully.');
-                    return resolve(true);
-                  } catch (error: any) {
-                    return reject('deployLambda error\n' + error);
-                  }
-                }
-              } else {
-                return reject('getFunctionExists error\n' + response.data);
-              }
-            }).catch((error: any) => {
-              if (error.response) {
-                if (error.response.status == 401) {
-                  return reject('Please, run "login" command first.');
-                }
-              }
-              return reject('getFunctionExists error\n' + error);
-            });
-          });
+          try {
+            await uploadZip(result[0].path);
+            return resolve(true);
+          } catch (error) {
+            return reject(error);
+          }
         }).catch(async (err) => {
           if (deployId) {
             await bohrApi.post('/deploy/setDeployError', {
@@ -566,6 +571,28 @@ export default class Deploy extends Command {
     };
 
     const StaticFilesProcess = async function () {
+      if(!await findIndexHTML(PUBLIC_PATH_FULL)){
+        if (deployId) {
+          await bohrApi.post('/deploy/setDeployError', {
+            deployId,
+            REPO_OWNER,
+            REPO_NAME,
+            errorMessage: "index.html not found in Public folder."
+          });
+          if (process.env.GITHUB_ACTIONS) console.log('::endgroup::');
+          console.log('\n\n');
+          logError('ERROR', 'index.html not found in Public folder.');
+          //@ts-ignore
+          originalProcessExit(1);
+        }
+      }
+  
+      if (!fs.existsSync(PUBLIC_PATH) || fs.readdirSync(PUBLIC_PATH).length == 0) {
+        console.error("Invalid or empty public folder.");
+        //@ts-ignore
+        originalProcessExit(1);
+      }
+
       return new Promise(async (resolve, reject) => {
         hashDir(PUBLIC_PATH).then(async function (hashs: any) {
           allHashs = hashs;
@@ -578,13 +605,36 @@ export default class Deploy extends Command {
       });
     };
 
-    if (!fs.existsSync(PUBLIC_PATH) || fs.readdirSync(PUBLIC_PATH).length == 0) {
-      console.error("Invalid or empty public folder.");
-      //@ts-ignore
-      originalProcessExit(1);
+    const findIndexHTML = async (PUBLIC_PATH_FULL: string) => new Promise(resolve => {
+      fs.readdir(PUBLIC_PATH_FULL, async function (err: any, list: any) {
+        if (err) return false;
+        await list.forEach(function (file: any) {
+          if(file.toLowerCase() == "index.html" ) {
+            resolve(true);
+          }
+        });
+        resolve(false);
+      });
+    });
+
+    const arrPromises = [];
+    if (process.env.BOHR_WEB_ADAPTER == '1') {
+      if (process.env.BOHR_WEB_ADAPTER_TYPE == 'nextjs') {
+        const functionZipPath = './.next/function.zip';
+        if (!(DEV_MODE && flags['no-install'] && flags['no-build'] && fs.existsSync('.next\\function.zip'))) {
+          await copyFolderRecursive('./public', './.next/standalone/public');
+          await copyFolderRecursive('./.next/static', './.next/standalone/.next/static');
+          createRunScript('./.next/standalone');
+          await createZip('./.next/standalone', functionZipPath);
+        }
+        arrPromises.push(uploadZip(functionZipPath));
+      }
+    } else {
+      arrPromises.push(deployLambda());
+      arrPromises.push(StaticFilesProcess());
     }
 
-    Promise.all([deployLambda(), StaticFilesProcess()]).then(async function () {
+    Promise.all(arrPromises).then(async function () {
       await saveSiteConfig(function (ret: any) {
         info(' DONE ', 'Site deployed successfully: ' + link('https://' + ret.url));
         if (process.env.GITHUB_ACTIONS) {
