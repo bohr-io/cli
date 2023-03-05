@@ -398,6 +398,7 @@ export function ab2str(buf: any) {
 export async function copyFolderRecursive(source: string, destination: string) {
   const fs = require('fs').promises;
   const path = require('path');
+  if (!fs.existsSync(source)) return;
   try {
     await fs.mkdir(destination, { recursive: true });
   } catch (error) {
