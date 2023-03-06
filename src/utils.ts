@@ -396,24 +396,28 @@ export function ab2str(buf: any) {
 }
 
 export async function copyFolderRecursive(source: string, destination: string) {
-  const fs = require('fs').promises;
-  const path = require('path');
-  if (!fs.existsSync(source)) return;
   try {
+    const fs = require('fs').promises;
+    const path = require('path');
     await fs.mkdir(destination, { recursive: true });
-  } catch (error) {
-  }
-  const files = await fs.readdir(source);
-  for (const file of files) {
-    const currentPath = path.join(source, file);
-    const destinationPath = path.join(destination, file);
-    const fileStat = await fs.stat(currentPath);
-    if (fileStat.isDirectory()) {
-      await fs.mkdir(destinationPath, { recursive: true });
-      await copyFolderRecursive(currentPath, destinationPath);
-    } else {
-      await fs.copyFile(currentPath, destinationPath);
+    const files = await fs.readdir(source);
+    for (const file of files) {
+      try {
+        const currentPath = path.join(source, file);
+        const destinationPath = path.join(destination, file);
+        const fileStat = await fs.stat(currentPath);
+        if (fileStat.isDirectory()) {
+          await fs.mkdir(destinationPath, { recursive: true });
+          await copyFolderRecursive(currentPath, destinationPath);
+        } else {
+          await fs.copyFile(currentPath, destinationPath);
+        }
+      } catch (error) {
+        console.warn(error);
+      }
     }
+  } catch (error) {
+    console.warn(error);
   }
 }
 
