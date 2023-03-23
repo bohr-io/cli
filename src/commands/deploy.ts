@@ -71,6 +71,7 @@ export default class Deploy extends Command {
 
     const configFiles = JSON.stringify(await this.getConfigFiles());
     let firstDeployFromTemplate = false;
+    let firstDeployUrl = null;
     let tryAutoLogin = false;
     const startDeploy = async (): Promise<any> => {
       let REPOSITORY: any = null;
@@ -104,6 +105,7 @@ export default class Deploy extends Command {
 
         if(res.data.firstDeployFromTemplate){
           firstDeployFromTemplate = res.data.firstDeployFromTemplate;
+          firstDeployUrl = res.data.firstDeployUrl;
           return;
         }
         deployId = res.data.deployId;
@@ -134,7 +136,7 @@ export default class Deploy extends Command {
     };
     await startDeploy();
     if(firstDeployFromTemplate){
-      info(' DONE ', 'Site deployed successfully: ');
+      info(' DONE ', 'Site deployed successfully: ' + link('https://' + firstDeployUrl));
       return;
     }
 
