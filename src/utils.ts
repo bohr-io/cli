@@ -11,10 +11,25 @@ const pjson = require("../package.json");
 
 export const PROD_URL = "https://bohr.io";
 
+export const cliFetch = async function (url: string, options: any = {}) {
+  let response = null;
+  if (typeof fetch === 'undefined') {
+    const fetch = require("node-fetch");
+    response = await fetch(url, options);
+  }
+  else {
+    const dns = require('node:dns');
+    dns.setDefaultResultOrder('ipv4first');
+
+    response = await fetch(url, options);
+  }
+  return response;
+}
+
 const getApiByEnv = async function (env: string) {
   try {
-    const fetch = await esloader("node-fetch");
-    const response = await fetch(PROD_URL + "/api/api?env=" + env);
+    const response = await cliFetch(PROD_URL + "/api/api?env=" + env);
+
     const body = await response.json();
     if (body.found) {
       return "https://" + body.url;
@@ -36,7 +51,7 @@ export async function getMainEndpoint(DEV_MODE: boolean) {
       timeout: 100,
       output: "silent",
     });
-    if (port_open) {
+    if (port_open.open == true) {
       ret = "http://localhost";
     } else {
       ret = await getApiByEnv(
@@ -97,12 +112,12 @@ export async function runInstall(
     // @ts-ignore
     console.log(
       "::group::" +
-        chalk.inverse.bold["yellow"](` RUNNING `) +
-        " " +
-        chalk["yellow"](
-          "Installing dependencies - " + chalk.red(process.env.INSTALL_CMD)
-        ) +
-        "\n"
+      chalk.inverse.bold["yellow"](` RUNNING `) +
+      " " +
+      chalk["yellow"](
+        "Installing dependencies - " + chalk.red(process.env.INSTALL_CMD)
+      ) +
+      "\n"
     );
   } else {
     warn(
@@ -433,10 +448,10 @@ export async function createZip(directoryPath: string, zipFilePath: string) {
   const output = fs.createWriteStream(zipFilePath);
   const archive = archiver('zip', { zlib: { level: 9 } });
   const promise = new Promise(async (resolve, reject) => {
-    output.on('close', function() {
+    output.on('close', function () {
       resolve(true);
     });
-    archive.on('error', function(error: any) {
+    archive.on('error', function (error: any) {
       reject(error);
     });
   });
