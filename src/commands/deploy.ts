@@ -103,7 +103,7 @@ export default class Deploy extends Command {
           GITHUB_ACTIONS_RUN_ID: process.env.GITHUB_RUN_ID
         });
 
-        if(res.data.firstDeployFromTemplate){
+        if (res.data.firstDeployFromTemplate) {
           firstDeployFromTemplate = res.data.firstDeployFromTemplate;
           firstDeployUrl = res.data.firstDeployUrl;
           return;
@@ -130,12 +130,17 @@ export default class Deploy extends Command {
             }
             this.error('Please, run "login" command first.');
           }
+          if (error.response.status == 403) {
+            if (error.response.data?.code == 7) {
+              this.error(chalk.red(error.response.data?.message));
+            }
+          }
         }
         this.error(error);
       }
     };
     await startDeploy();
-    if(firstDeployFromTemplate){
+    if (firstDeployFromTemplate) {
       info(' DONE ', 'Site deployed successfully: ' + link('https://' + firstDeployUrl));
       return;
     }
@@ -421,14 +426,14 @@ export default class Deploy extends Command {
       return functionExists;
     };
 
-    const uploadZip = function(functionZipPath: string) {
+    const uploadZip = function (functionZipPath: string) {
       return new Promise(async (resolve, reject) => {
         try {
           const hash: any = await hashFile(functionZipPath);
           lambda_hash = hash.hash;
-          
+
           let functionExists = await getFunctionExists(hash.hash);
-          
+
           if (functionExists) {
             info('SUCCESS', 'Function uploaded successfully (bypass).');
             return resolve(true);
@@ -482,7 +487,7 @@ export default class Deploy extends Command {
                 REPO_NAME,
                 errorMessage: e
               });
-            }            
+            }
             console.error(e);
             //@ts-ignore
             originalProcessExit(1);
@@ -507,7 +512,7 @@ export default class Deploy extends Command {
               REPO_NAME,
               errorMessage: err
             });
-          }             
+          }
           return reject(err);
         });
       });
@@ -573,7 +578,7 @@ export default class Deploy extends Command {
     };
 
     const StaticFilesProcess = async function () {
-      if(!await findIndexHTML(PUBLIC_PATH_FULL)){
+      if (!await findIndexHTML(PUBLIC_PATH_FULL)) {
         if (deployId) {
           await bohrApi.post('/deploy/setDeployError', {
             deployId,
@@ -588,7 +593,7 @@ export default class Deploy extends Command {
           originalProcessExit(1);
         }
       }
-  
+
       if (!fs.existsSync(PUBLIC_PATH) || fs.readdirSync(PUBLIC_PATH).length == 0) {
         console.error("Invalid or empty public folder.");
         //@ts-ignore
@@ -611,7 +616,7 @@ export default class Deploy extends Command {
       fs.readdir(PUBLIC_PATH_FULL, async function (err: any, list: any) {
         if (err) return false;
         await list.forEach(function (file: any) {
-          if(file.toLowerCase() == "index.html" ) {
+          if (file.toLowerCase() == "index.html") {
             resolve(true);
           }
         });
