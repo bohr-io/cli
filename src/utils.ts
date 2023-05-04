@@ -473,9 +473,11 @@ export async function checkAndCreateNextConfigFile(path: string) {
       await fs.appendFileSync('next.config.js', "\nmodule.exports?.images?.unoptimized = true;");
     }
   } else {
-    const contents = await fs.readFileSync(path + '/package.json', 'utf-8');
-    if (contents.includes('\"next\"')) {
-      await fs.writeFileSync('next.config.js', 'module.exports = {\n\timages: {\n\t\tunoptimized: true\n\t}\n}');
+    if (fs.existsSync(path + '/package.json')) {
+      const contents = await fs.readFileSync(path + '/package.json', 'utf-8');
+      if (contents.includes('\"next\"')) {
+        await fs.writeFileSync('next.config.js', 'module.exports = {\n\timages: {\n\t\tunoptimized: true\n\t}\n}');
+      }
     }
   }
 }
