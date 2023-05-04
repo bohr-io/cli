@@ -8,6 +8,7 @@ import * as chalk from "chalk";
 import * as https from "https";
 import axios from "axios";
 const pjson = require("../package.json");
+const fs = require('graceful-fs');
 
 export const PROD_URL = "https://bohr.io";
 
@@ -459,4 +460,22 @@ export async function createZip(directoryPath: string, zipFilePath: string) {
   archive.directory(directoryPath, false);
   archive.finalize();
   return Promise.resolve(promise);
+}
+
+export async function checkAndCreateNextConfigFile(path: string) {
+  if (fs.existsSync('next.config.js')) {
+    const contents = await fs.readFileSync(path + '/next.config.js', 'utf-8');
+
+    if (!contents.includes('unoptimized')) {
+      await fs.appendFileSync('next.config.js', "\nmodule.exports?.images?.unoptimized = true;");
+    }
+    else if (contents.includes('unoptimized: false') || contents.includes('unoptimized = false')) {
+      await fs.appendFileSync('next.config.js', "\nmodule.exports?.images?.unoptimized = true;");
+    }
+  } else {
+    const contents = await fs.readFileSync(path + '/package.json', 'utf-8');
+    if (contents.includes('\"next\"')) {
+      await fs.writeFileSync('next.config.js', 'module.exports = {\n\timages: {\n\t\tunoptimized: true\n\t}\n}');
+    }
+  }
 }

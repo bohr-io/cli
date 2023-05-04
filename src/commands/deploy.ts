@@ -1,7 +1,7 @@
 import { Command, Flags } from '@oclif/core';
 import Login from './login';
 import * as chalk from 'chalk';
-import { getCurrentGit, spawnAsync, info, warn, logError, link, loading, runInstall, getMainEndpoint, getBohrAPI, b64ToBuf, copyFolderRecursive, createRunScript, createZip } from '../utils';
+import { getCurrentGit, spawnAsync, info, warn, logError, link, loading, runInstall, getMainEndpoint, getBohrAPI, b64ToBuf, copyFolderRecursive, createRunScript, createZip, checkAndCreateNextConfigFile } from '../utils';
 import axios from 'axios';
 
 const fs = require('graceful-fs');
@@ -156,6 +156,9 @@ export default class Deploy extends Command {
       await runInstall(process.env.INSTALL_CMD as string, flags['show-install'], true);
     }
 
+    //Check for next.config.js
+    await checkAndCreateNextConfigFile('./');
+
     //Build
     if (process.env.BUILD_CMD && !flags['no-build']) {
       if (process.env.TURBOREPO_TOKEN) process.env.BUILD_CMD = process.env.BUILD_CMD.replace('#TURBOREPO_TOKEN#', process.env.TURBOREPO_TOKEN);
@@ -246,7 +249,9 @@ export default class Deploy extends Command {
                 (!file_filter.endsWith('/package-lock.json')) &&
                 (!file_filter.endsWith('/yarn.lock')) &&
                 (!file_filter.endsWith('/.yarnrc')) &&
-                (!file_filter.endsWith('/.gitignore'))) {
+                (!file_filter.endsWith('/.gitignore')) &&
+                (!file_filter.endsWith('README.md')) &&
+                (!file_filter.endsWith('next.conf.js'))) {
                 if (stat.size < 24 * 1024 * 1024) {
                   results.push(file);
                 } else {
@@ -657,15 +662,56 @@ export default class Deploy extends Command {
     });
   }
 
+  async findFileByName(dir: any, name: any) {
+    const matchedFiles = [];
+
+    const files = await fs.readdirSync(dir);
+
+    for (const file of files) {
+      // Method 1:
+      console.log(file);
+      const filename = path.parse(file).name;
+
+      if (filename === name) {
+        matchedFiles.push(file);
+      }
+    }
+
+    return matchedFiles;
+  };
+
+  async searchFiles(dirPath: any, configFiles: any = [], arrayOfFiles: any = []) {
+    let files = fs.readdirSync(dirPath);
+
+    arrayOfFiles = arrayOfFiles || []
+
+    for (const file of files) {
+      if (file == 'node_modules') continue;
+
+      if (fs.statSync(dirPath + "/" + file).isDirectory()) {
+        arrayOfFiles = await this.searchFiles(dirPath + "/" + file, configFiles, arrayOfFiles)
+      } else {
+        if (configFiles.includes(file)) {
+          arrayOfFiles.push({ name: file, path: path.resolve(dirPath, file) })
+        }
+      }
+    }
+
+    return arrayOfFiles
+  }
+
   async getConfigFiles() {
     const configFiles = ['_config.yml', 'babel.config.js', 'brunch-config.js', 'config.json', 'config.toml', 'config.yaml', 'hydrogen.config.js', 'hydrogen.config.ts', 'jest.config.js', 'package.json', 'package-lock.json', 'yarn.lock', 'remix.config.js', 'sanity.config.js', 'sanity.config.jsx', 'sanity.config.ts', 'sanity.config.tsx', 'sanity.json', 'tsconfig.json', 'tsconfig.root.json', 'turbo.json', 'vue.config.js'];
     let ret = [];
-    for (let i = 0; i < configFiles.length; i++) {
+
+    const files = await this.searchFiles(process.cwd(), configFiles);
+
+    for (let i = 0; i < files.length; i++) {
       try {
-        let data = fs.readFileSync(path.resolve('./' + configFiles[i]), { encoding: 'utf8' });
-        if (configFiles[i] == 'package-lock.json' || configFiles[i] == 'yarn.lock') data = '';
+        let data = fs.readFileSync(path.resolve(files[i].path), { encoding: 'utf8' });
+        if (files[i].name == 'package-lock.json' || files[i].name == 'yarn.lock') data = '';
         ret.push({
-          file: configFiles[i],
+          file: files[i].name,
           data: data
         });
       } catch (error) {
