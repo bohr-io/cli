@@ -119,4 +119,3 @@ DESCRIPTION
 
 _See code: [dist/commands/logout.ts](https://github.com/bohr-io/cli/blob/v1.0.281/dist/commands/logout.ts)_
 <!-- commandsstop -->
-
