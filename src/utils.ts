@@ -76,10 +76,8 @@ export async function getMainEndpoint(DEV_MODE: boolean) {
 
 export async function checkBohrAPIStatus(baseUrl: string) {
   try {
-    const body: any = await axios.get(baseUrl + "/api/status", {
-      httpsAgent: new https.Agent({ rejectUnauthorized: false }),
-    });
-    return body.data.bohr_api;
+    const body: any = await (await cliFetch(baseUrl + "/api/status")).json();
+    return body.bohr_api;
   } catch (error) {
     return false;
   }
@@ -437,9 +435,16 @@ export async function copyFolderRecursive(source: string, destination: string) {
   }
 }
 
-export function createRunScript(destination: string) {
+export function createRunScript(destination: string, type: string) {
   const fs = require('fs');
-  const content = "#!/bin/bash\n\n[ ! -d '/tmp/cache' ] && mkdir -p /tmp/cache\n\nexec node server.js\n";
+  let content = '';
+  if (type == 'nextjs') {
+    content = "#!/bin/bash\n\n[ ! -d '/tmp/cache' ] && mkdir -p /tmp/cache\n\nexec node server.js\n";
+  }
+  if (type == 'php') {
+    content = '#!/bin/sh\n\n# Fail on error\nset -e\n/opt/php/bin/php-fpm --force-stderr --fpm-config /var/task/php/etc/php-fpm.conf\nexec /opt/nginx/bin/nginx -c /var/task/nginx/conf/nginx.conf -g "daemon off;"\n';
+  }
+
   fs.writeFileSync(destination + '/run.sh', content);
 }
 
