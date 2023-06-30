@@ -634,10 +634,14 @@ export default class Deploy extends Command {
       if (process.env.BOHR_WEB_ADAPTER_TYPE == 'nextjs') {
         const functionZipPath = './.next/function.zip';
         if (!(DEV_MODE && flags['no-install'] && flags['no-build'] && fs.existsSync('.next\\function.zip'))) {
+          warn('RUNNING', "Copying project files...");
           await copyFolderRecursive('./public', './.next/standalone/public');
           await copyFolderRecursive('./.next/static', './.next/standalone/.next/static');
+          info(' DONE ', "Project files copied successfully.");
           createRunScript('./.next/standalone', 'nextjs');
+          warn('RUNNING', "Creating zip package...");
           await createZip('./.next/standalone', functionZipPath);
+          info(' DONE ', "Zip created successfully.");
         }
         arrPromises.push(uploadZip(functionZipPath));
       }
