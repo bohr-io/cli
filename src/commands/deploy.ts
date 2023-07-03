@@ -633,7 +633,7 @@ export default class Deploy extends Command {
     if (process.env.BOHR_WEB_ADAPTER == '1') {
       if (process.env.BOHR_WEB_ADAPTER_TYPE == 'nextjs') {
         const functionZipPath = './.next/function.zip';
-        if (!(DEV_MODE && flags['no-install'] && flags['no-build'] && fs.existsSync('.next\\function.zip'))) {
+        if (!(DEV_MODE && flags['no-install'] && flags['no-build'] && fs.existsSync(functionZipPath))) {
           warn('RUNNING', "Copying project files...");
           await copyFolderRecursive('./public', './.next/standalone/public');
           await copyFolderRecursive('./.next/static', './.next/standalone/.next/static');
@@ -647,7 +647,7 @@ export default class Deploy extends Command {
       }
       if (process.env.BOHR_WEB_ADAPTER_TYPE == 'php') {
         const functionZipPath = './function.zip';
-        if (!(DEV_MODE && flags['no-install'] && flags['no-build'] && fs.existsSync('.php\\function.zip'))) {
+        if (!(DEV_MODE && flags['no-install'] && flags['no-build'] && fs.existsSync(functionZipPath))) {
           warn('RUNNING', "Copying project files...");
           await copyFolderRecursive('./app', './.php/app');
           await copyFolderRecursive('./nginx', './.php/nginx');
@@ -657,6 +657,14 @@ export default class Deploy extends Command {
           warn('RUNNING', "Creating zip package...");
           await createZip('./.php', functionZipPath);
           info(' DONE ', "Zip created successfully.");
+        }
+        arrPromises.push(uploadZip(functionZipPath));
+      }
+      if (process.env.BOHR_WEB_ADAPTER_TYPE == 'nuxt') {
+        const functionZipPath = './function.zip';
+        if (!(DEV_MODE && flags['no-install'] && flags['no-build'] && fs.existsSync(functionZipPath))) {
+          warn('RUNNING', "Creating zip package...");
+          await createZip('./.output', functionZipPath);
         }
         arrPromises.push(uploadZip(functionZipPath));
       }

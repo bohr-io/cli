@@ -58,15 +58,18 @@ export async function getMainEndpoint(DEV_MODE: boolean) {
       ret = await getApiByEnv(
         CurrentGitBranch({ altPath: require.main?.path }) as string
       );
+      if (pjson.bohrEnv != "main") ret = ret.replace('bohr.io', 'bohr.rocks');
     }
     loading("DEV_MODE", "Using API at: " + chalk.red(ret));
   } else {
     if (process.env.GITHUB_ACTIONS && process.env.GITHUB_REPOSITORY == "bohr-io/core") {
       ret = await getApiByEnv(process.env.GITHUB_REF_NAME as string);
+      if (pjson.bohrEnv != "main") ret = ret.replace('bohr.io', 'bohr.rocks');
       loading("CHANGE", "Using API at: " + chalk.red(ret));
     } else {
       if (pjson.bohrEnv != "main") {
         ret = await getApiByEnv(pjson.bohrEnv);
+        if (pjson.bohrEnv != "main") ret = ret.replace('bohr.io', 'bohr.rocks');
         loading("CHANGE", "Using API at: " + chalk.red(ret));
       }
     }
@@ -88,7 +91,7 @@ export async function getBohrAPI(baseUrl: string, secret: string) {
     logError("ERROR", "API error, trying use production API...");
     baseUrl = PROD_URL + "/api";
   }
-  return axios.create({
+  const axiosInstance = axios.create({
     baseURL: baseUrl,
     headers: {
       "Content-Type": "application/json",
@@ -100,6 +103,15 @@ export async function getBohrAPI(baseUrl: string, secret: string) {
     maxContentLength: Infinity,
     maxBodyLength: Infinity,
   });
+  axiosInstance.interceptors.response.use(r => r, function(err: any) {
+    if (err.response) {
+      const custom_error = new Error(err.response.statusText || 'Internal server error');
+      custom_error.message = err.response.data ? err.response.data.error : null;
+      throw custom_error;
+    }
+    throw new Error(err);
+  });
+  return axiosInstance;
 }
 
 export async function runInstall(
@@ -443,6 +455,9 @@ export function createRunScript(destination: string, type: string) {
   }
   if (type == 'php') {
     content = '#!/bin/sh\n\n# Fail on error\nset -e\n/opt/php/bin/php-fpm --force-stderr --fpm-config /var/task/php/etc/php-fpm.conf\nexec /opt/nginx/bin/nginx -c /var/task/nginx/conf/nginx.conf -g "daemon off;"\n';
+  }
+  if (type == 'nuxt') {
+    content = "#!/bin/bash\n\n[ ! -d '/tmp/cache' ] && mkdir -p /tmp/cache\n\nexec node server/index.mjs\n";
   }
 
   fs.writeFileSync(destination + '/run.sh', content);
