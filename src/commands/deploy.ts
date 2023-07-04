@@ -653,7 +653,7 @@ export default class Deploy extends Command {
           await copyFolderRecursive('./nginx', './.php/nginx');
           await copyFolderRecursive('./php', './.php/php');
           info(' DONE ', "Project files copied successfully.");
-          createRunScript('./.php', 'php');
+          createRunScript('./.php', 'php', 'bootstrap');
           warn('RUNNING', "Creating zip package...");
           await createZip('./.php', functionZipPath);
           info(' DONE ', "Zip created successfully.");

@@ -103,7 +103,7 @@ export async function getBohrAPI(baseUrl: string, secret: string) {
     maxContentLength: Infinity,
     maxBodyLength: Infinity,
   });
-  axiosInstance.interceptors.response.use(r => r, function(err: any) {
+  axiosInstance.interceptors.response.use((r: any) => r, function (err: any) {
     if (err.response) {
       const custom_error = new Error(err.response.statusText || 'Internal server error');
       custom_error.message = err.response.data ? err.response.data.error : null;
@@ -447,20 +447,20 @@ export async function copyFolderRecursive(source: string, destination: string) {
   }
 }
 
-export function createRunScript(destination: string, type: string) {
+export function createRunScript(destination: string, type: string, filename: string = 'run.sh') {
   const fs = require('fs');
   let content = '';
   if (type == 'nextjs') {
     content = "#!/bin/bash\n\n[ ! -d '/tmp/cache' ] && mkdir -p /tmp/cache\n\nexec node server.js\n";
   }
   if (type == 'php') {
-    content = '#!/bin/sh\n\n# Fail on error\nset -e\n/opt/php/bin/php-fpm --force-stderr --fpm-config /var/task/php/etc/php-fpm.conf\nexec /opt/nginx/bin/nginx -c /var/task/nginx/conf/nginx.conf -g "daemon off;"\n';
+    content = '#!/bin/sh\n\n# Fail on error\nset -e\n/opt/php/bin/php-fpm -c /var/task/php --force-stderr --fpm-config /var/task/php/etc/php-fpm.conf \nexec /opt/nginx/bin/nginx -c /var/task/nginx/conf/nginx.conf -g "daemon off;"\n';
   }
   if (type == 'nuxt') {
     content = "#!/bin/bash\n\n[ ! -d '/tmp/cache' ] && mkdir -p /tmp/cache\n\nexec node server/index.mjs\n";
   }
 
-  fs.writeFileSync(destination + '/run.sh', content);
+  fs.writeFileSync(destination + '/' + filename, content);
 }
 
 export async function createZip(directoryPath: string, zipFilePath: string) {
