@@ -58,18 +58,18 @@ export async function getMainEndpoint(DEV_MODE: boolean) {
       ret = await getApiByEnv(
         CurrentGitBranch({ altPath: require.main?.path }) as string
       );
-      if (pjson.bohrEnv != "main") ret = ret.replace('bohr.io', 'bohr.rocks');
+      if (pjson.bohrEnv) ret = ret.replace('bohr.io', 'bohr.rocks');
     }
     loading("DEV_MODE", "Using API at: " + chalk.red(ret));
   } else {
     if (process.env.GITHUB_ACTIONS && process.env.GITHUB_REPOSITORY == "bohr-io/core") {
       ret = await getApiByEnv(process.env.GITHUB_REF_NAME as string);
-      if (pjson.bohrEnv != "main") ret = ret.replace('bohr.io', 'bohr.rocks');
+      if (pjson.bohrEnv) ret = ret.replace('bohr.io', 'bohr.rocks');
       loading("CHANGE", "Using API at: " + chalk.red(ret));
     } else {
-      if (pjson.bohrEnv != "main") {
+      if (pjson.bohrEnv) {
         ret = await getApiByEnv(pjson.bohrEnv);
-        if (pjson.bohrEnv != "main") ret = ret.replace('bohr.io', 'bohr.rocks');
+        if (pjson.bohrEnv) ret = ret.replace('bohr.io', 'bohr.rocks');
         loading("CHANGE", "Using API at: " + chalk.red(ret));
       }
     }
