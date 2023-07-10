@@ -102,9 +102,13 @@ export async function getBohrAPI(baseUrl: string, secret: string) {
   });
   axiosInstance.interceptors.response.use((r: any) => r, function (err: any) {
     if (err.response) {
-      const custom_error = new Error(err.response.statusText || 'Internal server error');
-      custom_error.message = err.response.data ? err.response.data.error : null;
-      throw custom_error;
+      try {
+        console.error(err.response.data);
+        const custom_error = new Error(err.response.statusText || 'Internal server error');
+        custom_error.message = err.response.data ? err.response.data.error : null;
+        throw custom_error;
+      } catch (error) {
+      }
     }
     throw new Error(err);
   });
