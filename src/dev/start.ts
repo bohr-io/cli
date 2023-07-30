@@ -2,6 +2,7 @@ import { EventEmitter } from 'events';
 import { getCurrentGit, loading } from '../utils';
 import Login from '../commands/login';
 import { AxiosInstance } from 'axios';
+const path = require('path');
 
 export interface StartDevOptions {
     bohrApi: AxiosInstance,
@@ -21,15 +22,14 @@ export class StartDev extends EventEmitter {
 
         try {
             const git = await getCurrentGit();
-            if (git == null) {
-                console.error('Git repository not found.');
-            }
-            let REPOSITORY = process.env.BOHR_REPOSITORY || (git as any).REPOSITORY;
+            const defaultName = '/' + path.basename(process.cwd()).replace(/\s/g, '-');
+            let REPOSITORY = process.env.BOHR_REPOSITORY || (git as any)?.REPOSITORY || defaultName;
+            console.log('REPOSITORY=' + REPOSITORY);
 
             let REPO_OWNER = REPOSITORY.split('/')[0];
             let REPO_NAME = REPOSITORY.split('/')[1];
             let REF_TYPE = process.env.BOHR_REF_TYPE || "BRANCH";
-            let REF_NAME = process.env.BOHR_REF_NAME || (git as any).REF_NAME;
+            let REF_NAME = process.env.BOHR_REF_NAME || (git as any)?.REF_NAME || 'main';
 
             const res = await this.opts.bohrApi.post(`/dev/start`, {
                 REPO_OWNER,
