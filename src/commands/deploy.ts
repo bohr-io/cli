@@ -128,17 +128,21 @@ export default class Deploy extends Command {
           });
         }
       } catch (error: any) {
-        if (error.response) {
-          if (error.response.status == 401) {
-            if (!tryAutoLogin) {
-              tryAutoLogin = true;
-              loading('DEV_MODE', 'Calling auto login...');
-              await Login.run();
-              Object.assign(bohrApi.defaults.headers, { 'Cookie': 'BohrSession=' + config.get('token') });
-              return await startDeploy();
-            }
-            this.error('Please, run "login" command first.');
+        if (error.message.indexOf('Request failed with status code 401') != -1) {
+          if (!tryAutoLogin) {
+            tryAutoLogin = true;
+            loading('DEV_MODE', 'Calling auto login...');
+            await Login.run();
+            const config = new (require('conf'))();
+            Object.assign(bohrApi.defaults.headers, { 'Cookie': 'BohrSession=' + config.get('token') });
+            return await startDeploy();
+          } else {
+            console.error('Please, run "login" command first.');
+            //@ts-ignore
+            originalProcessExit(1);
           }
+        }
+        if (error.response) {        
           if (error.response.status == 403) {
             if (error.response.data?.code == 7) {
               this.error(chalk.red(error.response.data?.message));
