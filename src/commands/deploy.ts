@@ -84,12 +84,9 @@ export default class Deploy extends Command {
         REF_NAME = process.env.GITHUB_REF_NAME;
       } else {
         const git = await getCurrentGit();
-        if (git == null) {
-          this.error('Git repository not found.');
-        }
         const defaultName = '/' + path.basename(process.cwd()).replace(/\s/g, '-');
-        REPOSITORY = process.env.BOHR_REPOSITORY || git.REPOSITORY || defaultName;
-        REF_NAME = process.env.BOHR_REF_NAME || git.REF_NAME;
+        REPOSITORY = process.env.BOHR_REPOSITORY || git?.REPOSITORY || defaultName;
+        REF_NAME = process.env.BOHR_REF_NAME || git?.REF_NAME || 'main';
       }
       REPO_OWNER = REPOSITORY.split('/')[0];
       REPO_NAME = REPOSITORY.split('/')[1];
