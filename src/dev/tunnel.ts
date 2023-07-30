@@ -373,9 +373,20 @@ export class Tunnel extends EventEmitter {
           isBase64
         };
       }
-    }
-    catch (error) {
-      console.log(error);
+    } catch (error) {
+      if (fetchOptions.headers.connection == 'Upgrade') {
+        //console.log('websocket not supported');
+      } else {
+        console.log(url.toString());
+        console.log(fetchOptions);
+        console.log(error);
+      }
+      return {
+        status: 500,
+        body: null,
+        headers: {},
+        isBase64: false
+      };
     }
   }
 

@@ -24,12 +24,12 @@ export class StartDev extends EventEmitter {
             if (git == null) {
                 console.error('Git repository not found.');
             }
-            let REPOSITORY = (git as any).REPOSITORY;
+            let REPOSITORY = process.env.BOHR_REPOSITORY || (git as any).REPOSITORY;
 
             let REPO_OWNER = REPOSITORY.split('/')[0];
             let REPO_NAME = REPOSITORY.split('/')[1];
-            let REF_TYPE = "BRANCH";
-            let REF_NAME = (git as any).REF_NAME;
+            let REF_TYPE = process.env.BOHR_REF_TYPE || "BRANCH";
+            let REF_NAME = process.env.BOHR_REF_NAME || (git as any).REF_NAME;
 
             const res = await this.opts.bohrApi.post(`/dev/start`, {
                 REPO_OWNER,

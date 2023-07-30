@@ -4,11 +4,14 @@ import * as chalk from 'chalk';
 import { getCurrentGit, spawnAsync, info, warn, logError, link, loading, runInstall, getMainEndpoint, getBohrAPI, b64ToBuf, copyFolderRecursive, createRunScript, createZip, checkAndCreateNextConfigFile } from '../utils';
 import axios from 'axios';
 
+
 const fs = require('graceful-fs');
 const path = require('path');
 const crypto = require('crypto');
 
 const pjson = require('../../package.json');
+
+require('dotenv').config({ path: path.resolve(process.cwd(), '.bohr.env') });
 
 export default class Deploy extends Command {
   static description = 'Deploy a site';
@@ -56,7 +59,7 @@ export default class Deploy extends Command {
 
     let REPO_OWNER: any = null;
     let REPO_NAME: any = null;
-    let REF_TYPE = "BRANCH";
+    let REF_TYPE = process.env.BOHR_REF_TYPE || "BRANCH";
     let REF_NAME: any = null;
     let deployId: any = null;
 
@@ -70,6 +73,7 @@ export default class Deploy extends Command {
     warn('WELCOME', 'Let\'s deploy it!...');
 
     const configFiles = JSON.stringify(await this.getConfigFiles());
+
     let firstDeployFromTemplate = false;
     let firstDeployUrl = null;
     let tryAutoLogin = false;
@@ -83,15 +87,16 @@ export default class Deploy extends Command {
         if (git == null) {
           this.error('Git repository not found.');
         }
-        REPOSITORY = git.REPOSITORY;
-        REF_NAME = git.REF_NAME;
+        REPOSITORY = process.env.BOHR_REPOSITORY || git.REPOSITORY;
+        REF_NAME = process.env.BOHR_REF_NAME || git.REF_NAME;
       }
       REPO_OWNER = REPOSITORY.split('/')[0];
       REPO_NAME = REPOSITORY.split('/')[1];
 
       try {
         const coreAction = require('@actions/core');
-        const res = await bohrApi.post('/deploy/start' + ((process.env.GITHUB_ACTIONS) ? '?ga=1' : ''), {
+
+        const startData = {
           ID_TOKEN: (process.env.GITHUB_ACTIONS) ? await coreAction.getIDToken() : undefined,
           GITHUB_TOKEN: process.env.GITHUB_TOKEN,
           GITHUB_ACTIONS: process.env.GITHUB_ACTIONS,
@@ -101,7 +106,13 @@ export default class Deploy extends Command {
           REF_NAME,
           CONFIG_FILES: configFiles,
           GITHUB_ACTIONS_RUN_ID: process.env.GITHUB_RUN_ID
-        });
+        };
+
+        if (process.env.BOHR_CLI_DEBUG) console.log(startData);
+
+        const res = await bohrApi.post('/deploy/start' + ((process.env.GITHUB_ACTIONS) ? '?ga=1' : ''), startData);
+
+        if (process.env.BOHR_CLI_DEBUG) console.log(res.data);
 
         if (res.data.firstDeployFromTemplate) {
           firstDeployFromTemplate = res.data.firstDeployFromTemplate;
@@ -714,6 +725,7 @@ export default class Deploy extends Command {
 
     for (const file of files) {
       if (file == 'node_modules') continue;
+      if (file == '.next') continue;
 
       if (fs.statSync(dirPath + "/" + file).isDirectory()) {
         arrayOfFiles = await this.searchFiles(dirPath + "/" + file, configFiles, arrayOfFiles)

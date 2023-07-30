@@ -34,7 +34,7 @@
     "chokidar": "^3.5.3",
     "conf": "^10.1.2",
     "current-git-branch": "^1.1.0",
-    "dotenv": "^16.0.1",
+    "dotenv": "^16.3.1",
     "engine.io-parser": "^5.0.4",
     "express": "^4.17.2",
     "git-remote-origin-url": "^4.0.0",

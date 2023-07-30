@@ -6,6 +6,8 @@ import { Tunnel } from '../dev/tunnel';
 import { StartDev } from '../dev/start';
 import { info, link, getMainEndpoint, runInstall, getBohrAPI } from '../utils';
 const pjson = require('../../package.json');
+const path = require('path');
+require('dotenv').config({ path: path.resolve(process.cwd(), '.bohr.env') });
 
 export default class Dev extends Command {
     static description = 'Run localhost environment';

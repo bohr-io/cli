@@ -484,21 +484,23 @@ export async function createZip(directoryPath: string, zipFilePath: string) {
 }
 
 export async function checkAndCreateNextConfigFile(path: string) {
-  if (fs.existsSync('next.config.js')) {
-    const contents = await fs.readFileSync(path + '/next.config.js', 'utf-8');
-
-    if (!contents.includes('unoptimized')) {
-      await fs.appendFileSync('next.config.js', "\nmodule.exports?.images?.unoptimized = true;");
-    }
-    else if (contents.includes('unoptimized: false') || contents.includes('unoptimized = false')) {
-      await fs.appendFileSync('next.config.js', "\nmodule.exports?.images?.unoptimized = true;");
-    }
-  } else {
+  try {
+    let isNext = false;
     if (fs.existsSync(path + '/package.json')) {
       const contents = await fs.readFileSync(path + '/package.json', 'utf-8');
-      if (contents.includes('\"next\"')) {
-        await fs.writeFileSync('next.config.js', 'module.exports = {\n\timages: {\n\t\tunoptimized: true\n\t}\n}');
+      isNext = contents.includes('\"next\"');
+    }
+    if (isNext) {
+      const nextConfigFile = "next.config.js";
+      const appedStr = "\nmodule.exports = {...module.exports, output: 'export', images: {unoptimized: true}};";
+      if (fs.existsSync(nextConfigFile)) {
+        await fs.appendFileSync(nextConfigFile, appedStr);
+      } else {
+        await fs.writeFileSync(nextConfigFile, appedStr);
       }
     }
+  } catch (error) {
+    console.error('checkAndCreateNextConfigFile');
+    console.error(error);
   }
 }
