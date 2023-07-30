@@ -87,7 +87,8 @@ export default class Deploy extends Command {
         if (git == null) {
           this.error('Git repository not found.');
         }
-        REPOSITORY = process.env.BOHR_REPOSITORY || git.REPOSITORY;
+        const defaultName = '/' + path.basename(process.cwd()).replace(/\s/g, '-');
+        REPOSITORY = process.env.BOHR_REPOSITORY || git.REPOSITORY || defaultName;
         REF_NAME = process.env.BOHR_REF_NAME || git.REF_NAME;
       }
       REPO_OWNER = REPOSITORY.split('/')[0];
