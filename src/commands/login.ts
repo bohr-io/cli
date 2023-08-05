@@ -1,4 +1,4 @@
-import { Command } from '@oclif/core'
+import { Command, Flags } from '@oclif/core'
 import stream = require('stream');
 import * as http from 'http';
 import * as portfinder from 'portfinder';
@@ -7,10 +7,21 @@ const pjson = require('../../package.json');
 
 export default class Login extends Command {
     static description = 'Login in your bohr.io account'
+    static flags = {
+        token: Flags.string({ char: 't', description: 'opcional token' }),
+    };
     async run(): Promise<void> {
         this.log('');
 
         let DEV_MODE = (!pjson.bohrEnv);
+
+        const { flags } = await this.parse(Login);
+
+        if (flags.token) {
+            this.saveToken(flags.token);
+            info('DONE', 'Login successful!');
+            return;
+        }
 
         let MAIN_ENDPOINT = await getMainEndpoint(DEV_MODE);
 
@@ -30,9 +41,7 @@ export default class Login extends Command {
             const server = http.createServer((request, response) => {
                 const url = require('url');
                 const query = url.parse(request.url, true).query;
-                const Conf = require('conf');
-                const config = new Conf();
-                config.set('token', query.token);
+                this.saveToken(query.token);
                 response.writeHead(302, { 'Location': MAIN_ENDPOINT + '/home' });
                 response.end();
                 for (const socket of sockets) {
@@ -57,5 +66,11 @@ export default class Login extends Command {
             require('open')(login_url);
         });
 
+    }
+
+    saveToken(token: string) {
+        const Conf = require('conf');
+        const config = new Conf();
+        config.set('token', token);
     }
 }
