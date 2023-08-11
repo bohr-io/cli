@@ -484,7 +484,6 @@ export default class Deploy extends Command {
         const API_PATH = DEPLOY_PATH + '/api';
         const DIST_API_PATH = 'dist-api';
         if (!fs.existsSync(API_PATH)) {
-          info('SUCCESS', 'API function uploaded successfully.');
           return resolve(true);
         }
         warn('RUNNING', 'Uploading API function....');

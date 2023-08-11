@@ -42,6 +42,10 @@ export class FunctionServer extends EventEmitter {
         */
         const PROJECT_PATH = `${process.cwd()}\\api\\core\\index.js`;
         const createFunctionHandler = async function () {
+
+            let regex = /^AWS_*/i;
+            let filteredProcessEnv: object = Object.fromEntries(Object.entries(process.env).filter(([key, value]) => !regex.test(key)));
+
             fn = await createFunction({
                 Code: {
                     //Directory: globalBohrPathResolved + '/cli/lambda-layer/bohr-wrapper'
@@ -53,7 +57,7 @@ export class FunctionServer extends EventEmitter {
                     Variables: {
                         DEV_MODE: true,
                         PROJECT_PATH: PROJECT_PATH,
-                        ...process.env
+                        ...filteredProcessEnv
                     }
                 },
                 MemorySize: 256
