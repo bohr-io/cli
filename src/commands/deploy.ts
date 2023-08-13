@@ -166,7 +166,25 @@ export default class Deploy extends Command {
 
     //Install
     if (process.env.INSTALL_CMD && !flags['no-install']) {
-      await runInstall(process.env.INSTALL_CMD as string, flags['show-install'], true);
+      try {
+        await runInstall(process.env.INSTALL_CMD as string, flags['show-install'], true);
+      } catch (error: any) {
+        if (deployId) {
+          await bohrApi.post('/deploy/setDeployError', {
+            deployId,
+            REPO_OWNER,
+            REPO_NAME,
+            errorMessage: error.stderr
+          });
+        }
+        if (process.env.GITHUB_ACTIONS) console.log('::endgroup::');
+        this.log('\n\n');
+        logError('ERROR', 'An error occurred while installing the dependencies.');
+        this.log(error.stdout);
+        this.log('\n\n');
+        this.log(error.stderr);
+        this.exit(1);
+      }
     }
 
     //Check for next.config.js

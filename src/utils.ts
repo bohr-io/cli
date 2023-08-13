@@ -17,11 +17,7 @@ export const cliFetch = async function (url: string, options: any = {}) {
   if (typeof fetch === 'undefined') {
     const fetch = require("node-fetch");
     response = await fetch(url, options);
-  }
-  else {
-    const dns = require('node:dns');
-    dns.setDefaultResultOrder('ipv4first');
-
+  } else {
     response = await fetch(url, options);
   }
   return response;
@@ -142,15 +138,7 @@ export async function runInstall(
     if (process.env.GITHUB_ACTIONS) console.log("::endgroup::");
     info("SUCCESS", "Dependencies were successfully installed.");
   } catch (error: any) {
-    if (process.env.GITHUB_ACTIONS) console.log("::endgroup::");
-    console.log("\n\n");
-    logError("ERROR", "An error occurred while installing dependencies.");
-    console.log(error.stdout);
-    console.log("\n\n");
-    console.log(error.stderr);
-
-    //@ts-ignore
-    originalProcessExit(1);
+    throw error;
   }
 }
 
