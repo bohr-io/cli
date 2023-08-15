@@ -7,6 +7,7 @@ import * as cp from "child_process";
 import * as chalk from "chalk";
 import * as https from "https";
 import axios from "axios";
+import { exec } from "child_process";
 const pjson = require("../package.json");
 const fs = require('graceful-fs');
 
@@ -518,6 +519,11 @@ jobs:
       - uses: bohr-io/action@main
 `;
         fs.writeFileSync(workflow_file, workflow, { flag: 'wx' });
+
+        exec("git add " + workflow_file, (error: any, stdout: any, stderr: any) => {
+          exec('git commit -m "Add bohr.yml"', (error: any, stdout: any, stderr: any) => {
+          });
+        });
       }
     });
   } catch (error) {
