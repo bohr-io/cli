@@ -485,7 +485,9 @@ export default class Deploy extends Command {
               if (retUpload.status != 200) {
                 throw 'deployLambda error\nupload error (1)';
               }
-              info('SUCCESS', 'Function uploaded successfully.');
+              if ((process.env.BOHR_WEB_ADAPTER != '1') && (process.env.BOHR_WEB_ADAPTER_TYPE != 'nextjs')) {
+                info('SUCCESS', 'Function uploaded successfully.');
+              }
               return resolve(true);
             } catch (error: any) {
               throw 'deployLambda error\n' + error;
@@ -531,7 +533,6 @@ export default class Deploy extends Command {
         };
         ZipAndShip().then(async result => {
           if (result.length == 0) {
-            info('SUCCESS', 'API function uploaded successfully.');
             return resolve(true);
           }
           try {
