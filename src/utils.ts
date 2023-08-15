@@ -471,11 +471,13 @@ export async function createZip(directoryPath: string, zipFilePath: string) {
   return Promise.resolve(promise);
 }
 
-export async function checkAndCreateNextConfigFile(path: string) {
+export async function checkAndCreateNextConfigFile() {
   try {
     let isNext = false;
-    if (fs.existsSync(path + '/package.json')) {
-      const contents = await fs.readFileSync(path + '/package.json', 'utf-8');
+    const packageJsonPath = process.cwd() + '/package.json';
+
+    if (fs.existsSync(packageJsonPath)) {
+      const contents = await fs.readFileSync(packageJsonPath, 'utf-8');
       isNext = contents.includes('\"next\"');
     }
     if (isNext) {
@@ -490,5 +492,38 @@ export async function checkAndCreateNextConfigFile(path: string) {
   } catch (error) {
     console.error('checkAndCreateNextConfigFile');
     console.error(error);
+  }
+}
+
+export async function checkAndCreateWorkflowFile() {
+  const workflow_path = process.cwd() + '/.github/workflows';
+  const workflow_file = workflow_path + '/bohr.yml';
+  try {
+
+    fs.access(workflow_file, fs.F_OK, function (err: any) {
+      if (err) {
+        fs.mkdirSync(process.cwd() + '/.github/workflows/', { recursive: true });
+        let workflow = `name: bohr.io deploy
+on:
+  push:
+  repository_dispatch:
+    types: [bohr-dispatch]
+permissions: write-all
+jobs:
+  deploy:
+    name: Deploy on bohr.io
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: bohr-io/action@main
+`;
+        fs.writeFileSync(workflow_file, workflow, { flag: 'wx' });
+      }
+    });
+  } catch (error) {
+
+    console.error('checkAndCreateWorkflowFile');
+    console.error(error);
+
   }
 }

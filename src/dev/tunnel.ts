@@ -21,7 +21,7 @@ export interface TunnelOptions {
 }
 
 const DEBUG = false;
-let LOCALHOST = false;
+let LOCALHOST = true;
 
 export class Tunnel extends EventEmitter {
   opts: TunnelOptions;
