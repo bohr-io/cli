@@ -64,7 +64,7 @@ export async function getMainEndpoint(DEV_MODE: boolean) {
     } else {
       if (pjson.bohrEnv) {
         ret = await getApiByEnv(pjson.bohrEnv);
-        loading("CHANGE", "Using API at: " + chalk.red(ret));
+        if (ret != PROD_URL) loading("CHANGE", "Using API at: " + chalk.red(ret));
       }
     }
   }
