@@ -480,7 +480,7 @@ export async function checkAndCreateNextConfigFile(path: string) {
     }
     if (isNext) {
       const nextConfigFile = "next.config.js";
-      const appedStr = "\nmodule.exports = {...module.exports, output: 'export', images: {unoptimized: true}};";
+      const appedStr = "\nmodule.exports = {...module.exports, output: 'standalone', images: { unoptimized: true }};";
       if (fs.existsSync(nextConfigFile)) {
         await fs.appendFileSync(nextConfigFile, appedStr);
       } else {

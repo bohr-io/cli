@@ -1,7 +1,7 @@
 import { Command, Flags } from '@oclif/core';
 import Login from './login';
 import * as chalk from 'chalk';
-import { getCurrentGit, spawnAsync, info, warn, logError, link, loading, runInstall, getMainEndpoint, getBohrAPI, b64ToBuf, copyFolderRecursive, createRunScript, createZip } from '../utils';
+import { getCurrentGit, spawnAsync, info, warn, logError, link, loading, runInstall, getMainEndpoint, getBohrAPI, b64ToBuf, copyFolderRecursive, createRunScript, createZip, checkAndCreateNextConfigFile } from '../utils';
 import axios from 'axios';
 
 
@@ -186,6 +186,9 @@ export default class Deploy extends Command {
         this.exit(1);
       }
     }
+
+    //Check for next.config.js
+    await checkAndCreateNextConfigFile('./');
 
     //Build
     if (process.env.BUILD_CMD && !flags['no-build']) {
