@@ -138,8 +138,20 @@ export async function runInstall(
     await spawnAsync(command, showOutput, showError);
     if (process.env.GITHUB_ACTIONS) console.log("::endgroup::");
     info("SUCCESS", "Dependencies were successfully installed.");
-  } catch (error: any) {
-    throw error;
+  } catch (err: any) {
+    try {
+      console.log("Deleting lock files...");
+      const deleteLockFilesCommand = "rm yarn.lock package-lock.json";
+      await spawnAsync(deleteLockFilesCommand, false, false);
+
+      console.log("Retrying install...");
+      await spawnAsync(command, showOutput, showError);
+
+      if (process.env.GITHUB_ACTIONS) console.log("::endgroup::");
+      info("SUCCESS", "Dependencies were successfully installed.");
+    } catch (error: any) {
+      throw error;
+    }
   }
 }
 
