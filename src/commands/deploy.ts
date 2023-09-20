@@ -403,7 +403,7 @@ export default class Deploy extends Command {
       const contentType = 'application/json';
       const jsonBuf = Buffer.from(data_value, "utf-8");
       let jsonKey = createSha256CspHash(jsonBuf);
-      const resGetSignedUrl = await bohrApi.get(`/deploy/getSignedUrl?fileName=${jsonKey}&fileType${contentType}`);
+      const resGetSignedUrl = await bohrApi.get(`/deploy/getSignedUrl?fileName=${jsonKey}&fileType=${contentType}`);
       const retUpload = await uploadToS3(jsonBuf, resGetSignedUrl.data.signedRequest);
       if (retUpload.status != 200) {
         throw ('saveSiteConfig error\n error saving site(1)');
