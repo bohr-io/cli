@@ -6,23 +6,23 @@ import { info, getMainEndpoint, getBohrAPI, logError, checkBohrAPIStatus, PROD_U
 const pjson = require('../../package.json');
 
 export default class Login extends Command {
-    static description = 'Login in your bohr.io account'
+    static description = 'Login in your bohr.io account';
+    static args = [{name: 'dev', description: 'called from command bohr dev'}]
     static flags = {
-        token: Flags.string({ char: 't', description: 'opcional token' }),
+        token: Flags.string({ char: 't', description: 'optional token' }),
     };
+
     async run(): Promise<void> {
         this.log('');
-
+        
         let DEV_MODE = (!pjson.bohrEnv);
-
         const { flags } = await this.parse(Login);
-
+        
         if (flags.token) {
             this.saveToken(flags.token);
             info('DONE', 'Login successful!');
             return;
         }
-
         let MAIN_ENDPOINT = await getMainEndpoint(DEV_MODE);
 
         if (!await checkBohrAPIStatus(MAIN_ENDPOINT + '/api')) {
