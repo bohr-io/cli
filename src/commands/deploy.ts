@@ -480,7 +480,7 @@ export default class Deploy extends Command {
 
               const contentType = 'application/zip';
               const zipBuf = b64ToBuf(ZIP);
-              const resGetSignedUrl = await bohrApi.get(`/deploy/getSignedUrl?fileName=${hash.hash}&fileType${contentType}`);
+              const resGetSignedUrl = await bohrApi.get(`/deploy/getSignedUrl?fileName=${hash.hash}&fileType=${contentType}`);
               const retUpload = await uploadToS3(zipBuf, resGetSignedUrl.data.signedRequest);
               if (retUpload.status != 200) {
                 throw 'deployLambda error\nupload error (1)';
