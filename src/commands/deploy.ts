@@ -232,7 +232,7 @@ export default class Deploy extends Command {
     let missingFiles: any = [];
 
     //Store hashes via api
-    const hashes_on_api = true;
+    let hashes_on_api = true;
 
     const hashFile = (filePath: string) => new Promise(resolve => {
       const hash = crypto.createHash('sha256');
@@ -641,7 +641,11 @@ export default class Deploy extends Command {
         hashDir(PUBLIC_PATH).then(async function (hashs: any) {
           allHashs = hashs;
           allHashsManifest = hashs.slice();
-          await getMissingFiles();
+          try {
+            await getMissingFiles();
+          } catch (error) {
+            hashes_on_api = false;
+          }
           await uploadFiles();
           info('SUCCESS', 'Files uploaded successfully.');
           resolve(true);
