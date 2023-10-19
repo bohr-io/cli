@@ -229,6 +229,8 @@ export default class Deploy extends Command {
     let allHashs: any = null;
     let allHashsManifest: any = null;
     let lambda_hash = '';
+    let framework: string = '';
+    let useLambda: boolean = false;
     let missingFiles: any = [];
 
     //Store hashes via api
@@ -397,6 +399,8 @@ export default class Deploy extends Command {
         lambda_hash: lambda_hash,
         stack: STACK,
         assets: assets,
+        framework: framework,
+        useLambda: useLambda
       };
       let data_value = JSON.stringify(data);
 
@@ -466,6 +470,11 @@ export default class Deploy extends Command {
     const uploadZip = function (functionZipPath: string) {
       return new Promise(async (resolve, reject) => {
         try {
+          if((process.env.BOHR_WEB_ADAPTER == '1') && (process.env.BOHR_WEB_ADAPTER_TYPE == 'nextjs')){
+            framework = 'nextjs';
+            useLambda = true;
+          }
+
           const hash: any = await hashFile(functionZipPath);
           lambda_hash = hash.hash;
 
@@ -653,6 +662,34 @@ export default class Deploy extends Command {
       });
     };
 
+    const StaticNextFilesProcess = async function () {
+      if (!fs.existsSync('./.next/static') || fs.readdirSync('./.next/static').length == 0) {
+        console.error("Invalid or empty public folder.");
+        //@ts-ignore
+        originalProcessExit(1);
+      }
+      info('RUNNING', `Uploading static NextJs files.`);
+      return new Promise(async (resolve, reject) => {
+        hashDir('./.next/static').then(async function (hashs: any) {
+          hashDir('./public').then(async function (publicHashs: any) {
+            allHashs = hashs;
+            publicHashs.map((hash:any) =>{
+              allHashs.push(hash);
+            });            
+            allHashsManifest = hashs.slice();
+            try {
+              await getMissingFiles();
+            } catch (error) {
+              hashes_on_api = false;
+            }
+            await uploadFiles();
+            info('SUCCESS',  `Static NextJs uploaded successfully.`);
+            resolve(true);
+          });
+        });
+      });
+    };    
+
     const findIndexHTML = async (PUBLIC_PATH_FULL: string) => new Promise(resolve => {
       fs.readdir(PUBLIC_PATH_FULL, async function (err: any, list: any) {
         if (err) return false;
@@ -676,6 +713,7 @@ export default class Deploy extends Command {
           await createZip('./.next/standalone', functionZipPath);
         }
         arrPromises.push(uploadZip(functionZipPath));
+        arrPromises.push(StaticNextFilesProcess());
       }
       if (process.env.BOHR_WEB_ADAPTER_TYPE == 'php') {
         const functionZipPath = './function.zip';
