@@ -1,6 +1,6 @@
 {
   "name": "bohr",
-  "version": "1.0.569",
+  "version": "1.0.571",
   "description": "The deploy platform for developers.",
   "author": "bohr.io",
   "bin": {
