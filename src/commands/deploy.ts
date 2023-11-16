@@ -346,43 +346,47 @@ export default class Deploy extends Command {
 
     const uploadFiles = async function () {
       return new Promise(async (resolve, reject) => {
-        warn('RUNNING', 'Uploading files...');
-        let data = [];
-        let data_hash = [];
-        let data_len = 0;
-        let parallel_bulks = [];
-        for (let i = allHashs.length - 1; i >= 0; i--) {
-          if (hashes_on_api) {
-            if (!missingFiles.includes(allHashs[i].hash)) continue;
-          }
-          data.push(fs.readFileSync(PUBLIC_PATH_FULL + allHashs[i].file, { encoding: 'base64' }));
-          data_hash.push(allHashs[i].hash);
-          data_len += data[data.length - 1].length;
-          allHashs.pop();
-          if ((data_len >= 50000000) || (data.length >= 500)) {
-            parallel_bulks.push(kvBulk(data, data_hash));
-            data = [];
-            data_hash = [];
-            data_len = 0;
-          }
-          if (parallel_bulks.length >= 20) {
-            try {
-              await Promise.all(parallel_bulks);
-            } catch (error) {
-              reject(error);
+        try {
+          warn('RUNNING', 'Uploading files...');
+          let data = [];
+          let data_hash = [];
+          let data_len = 0;
+          let parallel_bulks = [];
+          for (let i = allHashs.length - 1; i >= 0; i--) {
+            if (hashes_on_api) {
+              if (!missingFiles.includes(allHashs[i].hash)) continue;
             }
-            parallel_bulks = [];
+            data.push(fs.readFileSync(PUBLIC_PATH_FULL + allHashs[i].file, { encoding: 'base64' }));
+            data_hash.push(allHashs[i].hash);
+            data_len += data[data.length - 1].length;
+            allHashs.pop();
+            if ((data_len >= 50000000) || (data.length >= 500)) {
+              parallel_bulks.push(kvBulk(data, data_hash));
+              data = [];
+              data_hash = [];
+              data_len = 0;
+            }
+            if (parallel_bulks.length >= 20) {
+              try {
+                await Promise.all(parallel_bulks);
+              } catch (error) {
+                reject(error);
+              }
+              parallel_bulks = [];
+            }
           }
-        }
-        if (data.length > 0) {
-          parallel_bulks.push(kvBulk(data, data_hash));
-        }
+          if (data.length > 0) {
+            parallel_bulks.push(kvBulk(data, data_hash));
+          }
 
-        Promise.all(parallel_bulks).then(function () {
-          resolve(true);
-        }).catch(function (error) {
+          Promise.all(parallel_bulks).then(function () {
+            resolve(true);
+          }).catch(function (error) {
+            reject(error);
+          });
+        } catch (error) {
           reject(error);
-        });
+        }
       });
     };
 
@@ -470,7 +474,7 @@ export default class Deploy extends Command {
     const uploadZip = function (functionZipPath: string) {
       return new Promise(async (resolve, reject) => {
         try {
-          if((process.env.BOHR_WEB_ADAPTER == '1') && (process.env.BOHR_WEB_ADAPTER_TYPE == 'nextjs')){
+          if ((process.env.BOHR_WEB_ADAPTER == '1') && (process.env.BOHR_WEB_ADAPTER_TYPE == 'nextjs')) {
             framework = 'nextjs';
             useLambda = true;
           }
@@ -673,9 +677,9 @@ export default class Deploy extends Command {
         hashDir('./.next/static').then(async function (hashs: any) {
           hashDir('./public').then(async function (publicHashs: any) {
             allHashs = hashs;
-            publicHashs.map((hash:any) =>{
+            publicHashs.map((hash: any) => {
               allHashs.push(hash);
-            });            
+            });
             allHashsManifest = hashs.slice();
             try {
               await getMissingFiles();
@@ -683,12 +687,12 @@ export default class Deploy extends Command {
               hashes_on_api = false;
             }
             await uploadFiles();
-            info('SUCCESS',  `Static NextJs uploaded successfully.`);
+            info('SUCCESS', `Static NextJs uploaded successfully.`);
             resolve(true);
           });
         });
       });
-    };    
+    };
 
     const findIndexHTML = async (PUBLIC_PATH_FULL: string) => new Promise(resolve => {
       fs.readdir(PUBLIC_PATH_FULL, async function (err: any, list: any) {
