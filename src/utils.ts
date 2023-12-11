@@ -141,8 +141,12 @@ export async function runInstall(
   } catch (err: any) {
     try {
       console.log("Deleting lock files...");
-      const deleteLockFilesCommand = "rm yarn.lock package-lock.json";
-      await spawnAsync(deleteLockFilesCommand, false, false);
+      try {
+        const deleteLockFilesCommand = "rm yarn.lock package-lock.json";
+        await spawnAsync(deleteLockFilesCommand, false, false);
+      } catch (error) {
+        console.error(error);
+      }
 
       console.log("Retrying install...");
       await spawnAsync(command, showOutput, showError);
@@ -150,6 +154,7 @@ export async function runInstall(
       if (process.env.GITHUB_ACTIONS) console.log("::endgroup::");
       info("SUCCESS", "Dependencies were successfully installed.");
     } catch (error: any) {
+      warn("FAILED", "Unable to install dependencies.");
       throw error;
     }
   }
